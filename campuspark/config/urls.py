@@ -1,3 +1,7 @@
+# urls.py
+# Roteamento principal do sistema.
+# Define quais rotas globais apontam para cada app (usuarios, veiculos, acessos).
+
 """
 URL configuration for campuspark project.
 

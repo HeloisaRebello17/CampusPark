@@ -1,3 +1,10 @@
+# settings.py
+# Configurações globais do projeto:
+# - Banco de dados
+# - Apps instalados
+# - Segurança (chaves secretas, autenticação)
+# - Configurações de templates e arquivos estáticos
+
 """
 Django settings for campuspark project.
 

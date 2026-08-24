@@ -1,3 +1,7 @@
+# manage.py
+# Arquivo principal de utilitários do Django.
+# Usado para rodar o servidor, aplicar migrações e executar comandos administrativos.
+
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
 import os
