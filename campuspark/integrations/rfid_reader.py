@@ -1,5 +1,5 @@
-# rfid_reader.py
-# Integração com hardware RFID.
-def ler_tag(tag_id):
-    # Simulação de leitura de RFID
-    return tag_id in ["TAG123", "TAG456"]
+class RFIDReader:
+    """No MVP a leitura é simulada — troca-se por SDK real do leitor físico depois."""
+
+    def ler_tag(self) -> str:
+        return input("Simulação: digite a TAG lida pelo leitor -> ").strip()

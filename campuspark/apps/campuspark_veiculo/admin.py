@@ -1,3 +1,6 @@
 from django.contrib import admin
+from .models import Veiculo
 
-# Register your models here.
+@admin.register(Veiculo)
+class VeiculoAdmin(admin.ModelAdmin):
+    list_display = ("placa", "aluno")

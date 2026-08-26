@@ -1,8 +1,10 @@
-# routes.py
-# Define as rotas específicas para usuários (login, cadastro).
-from django.urls import path
-from . import controllers
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import VeiculoViewSet
+
+router = DefaultRouter()
+router.register(r"veiculos", VeiculoViewSet)
 
 urlpatterns = [
-    path("cadastro/", controllers.cadastrar_aluno, name="cadastro_aluno"),
+    path("", include(router.urls)),
 ]

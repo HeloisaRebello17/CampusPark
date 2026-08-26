@@ -38,14 +38,16 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'campuspark_aluno',
-    'campuspark_operador',
+    'apps.campuspark_usuario',
+    'apps.campuspark_veiculo',
+    'apps.campuspark_acesso',
 ]
 
 MIDDLEWARE = [
@@ -58,7 +60,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'campuspark.urls'
+ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
