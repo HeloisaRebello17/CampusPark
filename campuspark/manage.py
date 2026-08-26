@@ -1,3 +1,7 @@
+# manage.py
+# Arquivo principal de utilitários do Django.
+# Usado para rodar o servidor, aplicar migrações e executar comandos administrativos.
+
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
 import os
@@ -6,7 +10,7 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'campuspark.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
