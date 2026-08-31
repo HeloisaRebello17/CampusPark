@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'apps.campuspark_usuario',
     'apps.campuspark_veiculo',
     'apps.campuspark_acesso',
+    'apps.campuspark_biometria',
 ]
 
 MIDDLEWARE = [

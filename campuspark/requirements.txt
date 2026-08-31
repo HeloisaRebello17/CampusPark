@@ -4,3 +4,5 @@ python-decouple>=3.8
 mysqlclient>=2.2
 django-cors-headers>=4.3
 Pillow>=10.0
+opencv-contrib-python>=4.9
+numpy>=1.26
