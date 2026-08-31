@@ -1,7 +1,6 @@
 # models.py
 # Histórico de entrada e saída de veículos.
 from django.db import models
-from apps.campuspark_usuario.models import models
 
 class HistoricoEntrada(models.Model):
     veiculo = models.ForeignKey("campuspark_veiculo.Veiculo", on_delete=models.CASCADE)
