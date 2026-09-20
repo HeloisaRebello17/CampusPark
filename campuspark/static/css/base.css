@@ -1,0 +1,79 @@
+:root {
+    --azul: #0b3d91;
+    --azul-escuro: #082a66;
+    --vermelho: #d81324;
+    --vermelho-escuro: #ad0f1d;
+    --cinza-fundo: #eaf2fb;
+    --cinza-borda: #dfe3e8;
+    --campo-fundo: #dceafb;
+    --texto: #10182c;
+    --texto-suave: #6b7280;
+    --branco: #ffffff;
+    --verde: #1a7f37;
+    --card-radius: 20px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--cinza-fundo);
+    color: var(--texto);
+}
+
+a {
+    color: var(--azul);
+}
+
+.topo-decor {
+    height: 4px;
+    background: #0d0d0d;
+    position: relative;
+}
+
+.topo-decor::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 56px;
+    height: 4px;
+    background: var(--vermelho);
+    border-radius: 0 0 4px 4px;
+}
+
+.mensagens {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.mensagem {
+    padding: 12px 20px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.mensagem--success {
+    background: #e6f4ea;
+    color: var(--verde);
+}
+
+.mensagem--error {
+    background: #fdecea;
+    color: var(--vermelho);
+}
+
+.mensagem--warning {
+    background: #fff8e1;
+    color: #8a6100;
+}
+
+.mensagem--info {
+    background: #e8f0fe;
+    color: var(--azul);
+}

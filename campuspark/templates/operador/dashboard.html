@@ -1,0 +1,73 @@
+{% extends "operador/_painel.html" %}
+
+{% block title %}Dashboard — CampusPark{% endblock %}
+
+{% block painel_conteudo %}
+<h1 class="painel-titulo">Estacionamento<span class="painel-titulo-linha"></span></h1>
+<p class="painel-subtitulo">Vagas ocupadas e histórico de entrada e saída</p>
+
+<section class="cards">
+    <div class="card">
+        <span class="card-titulo">Carros dentro</span>
+        <span class="card-valor">{{ carros_dentro }} / {{ config.vagas_carro }}</span>
+        <span class="card-legenda">{{ vagas_carro_livres }} vaga(s) livre(s)</span>
+    </div>
+    <div class="card">
+        <span class="card-titulo">Motos dentro</span>
+        <span class="card-valor">{{ motos_dentro }} / {{ config.vagas_moto }}</span>
+        <span class="card-legenda">{{ vagas_moto_livres }} vaga(s) livre(s)</span>
+    </div>
+</section>
+
+{% if operador.is_administrador %}
+<section class="painel">
+    <h2>Capacidade do Estacionamento</h2>
+    <form method="post" action="{% url 'dashboard-vagas' %}" class="form-vagas">
+        {% csrf_token %}
+        <div>
+            <label for="vagas_carro">Vagas para carro</label>
+            <input type="number" id="vagas_carro" name="vagas_carro" min="0" value="{{ config.vagas_carro }}" required>
+        </div>
+        <div>
+            <label for="vagas_moto">Vagas para moto</label>
+            <input type="number" id="vagas_moto" name="vagas_moto" min="0" value="{{ config.vagas_moto }}" required>
+        </div>
+        <button type="submit">Salvar capacidade</button>
+    </form>
+</section>
+{% endif %}
+
+<section class="painel">
+    <h2>Histórico de Entrada e Saída</h2>
+    <table class="tabela-historico">
+        <thead>
+            <tr>
+                <th>Placa</th>
+                <th>Tipo</th>
+                <th>Aluno</th>
+                <th>Matrícula</th>
+                <th>Entrada</th>
+                <th>Saída</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for registro in historico %}
+            <tr>
+                <td>{{ registro.veiculo.placa }}</td>
+                <td>{{ registro.veiculo.get_tipo_display }}</td>
+                <td>{{ registro.veiculo.aluno.nome_completo }}</td>
+                <td>{{ registro.veiculo.aluno.matricula }}</td>
+                <td>{{ registro.data_entrada|date:"d/m/Y H:i" }}</td>
+                <td>{{ registro.data_saida|date:"d/m/Y H:i"|default:"—" }}</td>
+                <td><span class="status status--{{ registro.status|lower }}">{{ registro.get_status_display }}</span></td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="tabela-vazia">Nenhum registro de acesso ainda.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

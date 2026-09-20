@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "campuspark-dev",
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": ["campuspark/manage.py", "runserver", "127.0.0.1:8000"],
+      "port": 8000
+    }
+  ]
+}

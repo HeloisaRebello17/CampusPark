@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/operador.css' %}">
+    {% block painel_css %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="painel-shell">
+    <aside class="sidebar">
+        <div class="sidebar-marca">
+            <strong>Parking Admin</strong>
+            <span>Controle Institucional</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{% url 'dashboard' %}" class="{% if secao == 'dashboard' %}ativo{% endif %}">Dashboard</a>
+            <a href="{% url 'lista-alunos' %}" class="{% if secao == 'alunos' %}ativo{% endif %}">Lista de Alunos</a>
+            <span class="sidebar-desabilitado" title="Em breve">Cadastro</span>
+            <span class="sidebar-desabilitado" title="Em breve">Relatórios</span>
+        </nav>
+        <div class="sidebar-rodape">
+            <span class="sidebar-desabilitado" title="Em breve">Suporte</span>
+            <a href="{% url 'operador-logout' %}">Sair</a>
+        </div>
+    </aside>
+
+    <div class="painel-principal">
+        <header class="painel-header">
+            <span class="painel-marca">CAMPUS PARK</span>
+            <form class="painel-busca" method="get" action="{% url 'lista-alunos' %}">
+                <input type="search" name="busca" placeholder="Buscar aluno ou placa...">
+            </form>
+            <div class="painel-header-usuario">
+                <span class="painel-header-nome">{{ operador.nome_completo }}</span>
+                <span class="painel-header-cargo">{{ operador.tipo_operador.descricao }}</span>
+            </div>
+        </header>
+
+        <main class="painel-conteudo">
+            {% block painel_conteudo %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}
