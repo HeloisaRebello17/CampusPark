@@ -23,3 +23,6 @@ media/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Configs locais de ferramentas de IA (nunca versionar)
+.claude/
