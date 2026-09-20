@@ -64,9 +64,11 @@ Aluno 1 ──< Veiculo 1 ──< RegistroAcesso >── 1 Operador >── 1 Ti
 |---|---|---|---|
 | id | LONG (identity) | PK | |
 | tipo_operador_id | INT | FK → TipoOperador, NOT NULL | |
-| cpf | CHAR(11) | NOT NULL, UNIQUE | |
+| cpf | CHAR(11) | NOT NULL, UNIQUE | Usado como identificador de login (RNF14, ADR-006) |
 | nome_completo | VARCHAR(200) | NOT NULL | |
 | email | VARCHAR(255) | NOT NULL | |
+| senha_hash | VARCHAR(255) | NOT NULL | Login do operador (porteiro/administrador) — ADR-006 |
+| ativo | BOOLEAN | DEFAULT TRUE | Permite desativar o login de um operador sem excluir o cadastro |
 | data_criacao | TIMESTAMP | NOT NULL | `auto_now_add` |
 
 ### 2.5 RegistroAcesso
@@ -79,6 +81,20 @@ Aluno 1 ──< Veiculo 1 ──< RegistroAcesso >── 1 Operador >── 1 Ti
 | data_entrada | TIMESTAMP | NOT NULL | `auto_now_add` — RF08 |
 | data_saida | TIMESTAMP | NULLABLE | Preenchido só no momento da saída — RF09 |
 | status | ENUM | NOT NULL, DEFAULT `DENTRO` | `DENTRO` / `FINALIZADO` / `NEGADO` |
+
+### 2.6 ConfiguracaoEstacionamento (ADR-006)
+
+| Campo | Tipo | Restrições | Observação |
+|---|---|---|---|
+| id | LONG (identity) | PK | Registro único (singleton, `pk=1`) |
+| vagas_carro | INT | NOT NULL, DEFAULT 0 | Capacidade máxima de vagas para carro, editável por Administrador |
+| vagas_moto | INT | NOT NULL, DEFAULT 0 | Capacidade máxima de vagas para moto, editável por Administrador |
+| atualizado_em | TIMESTAMP | NOT NULL | `auto_now` |
+
+> Fora do escopo original do MVP ("controle de vagas em tempo real"); implementado a pedido do
+> usuário do projeto — ver ADR-006 em `decisoes_tecnicas.md`. Não há sensor/hardware associado: os
+> contadores de veículos "dentro" continuam vindo de `RegistroAcesso.status = DENTRO`, apenas a
+> capacidade máxima é um valor configurado manualmente.
 
 ---
 
