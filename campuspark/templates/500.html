@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Erro interno — CampusPark{% endblock %}
+
+{% block content %}
+<div class="erro-tela">
+    <div class="erro-card">
+        <img class="erro-logo" src="{% static 'images/CampusPark_LogoAzul.png' %}" alt="CampusPark">
+        <span class="erro-codigo">500</span>
+        <h1>Erro interno do servidor</h1>
+        <p>Algo deu errado do nosso lado. Tente novamente em instantes.</p>
+        <a href="{% url 'operador-login' %}" class="erro-botao">Voltar para o login</a>
+    </div>
+</div>
+{% endblock %}
