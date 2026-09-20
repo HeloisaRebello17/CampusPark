@@ -77,3 +77,64 @@ a {
     background: #e8f0fe;
     color: var(--azul);
 }
+
+.erro-tela {
+    min-height: calc(100vh - 4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.erro-card {
+    background: var(--branco);
+    border-radius: var(--card-radius);
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(16, 24, 44, 0.08);
+}
+
+.erro-logo {
+    height: 36px;
+    margin-bottom: 24px;
+}
+
+.erro-codigo {
+    display: block;
+    font-size: 56px;
+    font-weight: 800;
+    color: var(--campo-fundo);
+    line-height: 1;
+}
+
+.erro-card h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--texto);
+    margin: 12px 0 8px;
+}
+
+.erro-card p {
+    color: var(--texto-suave);
+    font-size: 13px;
+    margin: 0 0 28px;
+}
+
+.erro-botao {
+    display: inline-block;
+    padding: 12px 28px;
+    border-radius: 10px;
+    background: var(--vermelho);
+    color: var(--branco);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.erro-botao:hover {
+    background: var(--vermelho-escuro);
+}

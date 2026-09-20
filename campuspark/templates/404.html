@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Página não encontrada — CampusPark{% endblock %}
+
+{% block content %}
+<div class="erro-tela">
+    <div class="erro-card">
+        <img class="erro-logo" src="{% static 'images/CampusPark_LogoAzul.png' %}" alt="CampusPark">
+        <span class="erro-codigo">404</span>
+        <h1>Página não encontrada</h1>
+        <p>O endereço acessado não existe ou foi movido.</p>
+        <a href="{% url 'operador-login' %}" class="erro-botao">Voltar para o login</a>
+    </div>
+</div>
+{% endblock %}
