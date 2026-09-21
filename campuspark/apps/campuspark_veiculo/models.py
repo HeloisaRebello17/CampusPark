@@ -15,8 +15,9 @@ class Veiculo(models.Model):
     fabricante = models.CharField(max_length=30, blank=True)
     modelo = models.CharField(max_length=30, blank=True)
     cor = models.CharField(max_length=20, blank=True)
-    tag_rfid = models.CharField(max_length=30, unique=True)
+    tag_rfid = models.CharField(max_length=30, unique=True, blank=True, null=True)
     autorizado = models.BooleanField(default=True)
+    seguro_ativo = models.BooleanField(default=False)
     data_criacao = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

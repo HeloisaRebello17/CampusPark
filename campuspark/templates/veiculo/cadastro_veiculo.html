@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Cadastro de Veículo · CampusPark{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
+<link rel="stylesheet" href="{% static 'css/veiculo.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="app-shell">
+  {% include "partials/aluno_sidebar.html" with active="cadastro-veiculo" %}
+
+  <div class="page-main">
+    {% include "partials/aluno_topbar.html" %}
+
+    <div class="page-content">
+      <div class="page-eyebrow">Formulário de Ingresso</div>
+      <h1 class="page-title">Dados do Veículo</h1>
+      <p class="page-subtitle">Preencha as informações abaixo para vincular um novo veículo ao seu perfil de estudante.</p>
+
+      {% if erros %}
+      <ul style="color:var(--color-primary);font-size:0.82rem;margin:0 0 16px;padding-left:18px;">
+        {% for erro in erros %}<li>{{ erro }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <label class="field-label" style="display:block;margin-bottom:12px;">Tipo de Veículo</label>
+        <div class="vehicle-type-group" data-option-group>
+          <label class="vehicle-type-option{% if valores.tipo_veiculo != 'motocicleta' %} is-selected{% endif %}" data-option>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M5 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm14 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5 17V9l2-5h10l2 5v8" /></svg>
+            <input type="radio" name="tipo_veiculo" value="automovel" {% if valores.tipo_veiculo != 'motocicleta' %}checked{% endif %} hidden />
+            Automóvel
+          </label>
+          <label class="vehicle-type-option{% if valores.tipo_veiculo == 'motocicleta' %} is-selected{% endif %}" data-option>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5" /><circle cx="18.5" cy="17.5" r="3.5" /><path d="M15 6a1 1 0 0 1 1-1h3M5.5 17.5 9 10h4l3 3.5M9 10 7 6H5" /></svg>
+            <input type="radio" name="tipo_veiculo" value="motocicleta" {% if valores.tipo_veiculo == 'motocicleta' %}checked{% endif %} hidden />
+            Motocicleta
+          </label>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="placa">Placa do Veículo</label>
+            <input class="field-input" type="text" id="placa" name="placa" placeholder="ABC-1234" maxlength="8" value="{{ valores.placa|default:'' }}" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="modelo_ano">Modelo e Ano</label>
+            <input class="field-input" type="text" id="modelo_ano" name="modelo_ano" placeholder="Ex: Honda Civic 2022" value="{{ valores.modelo_ano|default:'' }}" />
+          </div>
+        </div>
+
+        <div class="insurance-card">
+          <span class="insurance-card-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V5z" /></svg>
+          </span>
+          <span class="insurance-card-text">
+            <span class="insurance-card-title">Possui Seguro Ativo?</span>
+            <span class="insurance-card-desc">A cobertura de seguro é recomendada para acesso ao Campus Norte.</span>
+          </span>
+          <label class="switch">
+            <input type="checkbox" name="seguro_ativo" {% if seguro_ativo %}checked{% endif %} />
+            <span class="switch-track"></span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">
+          Finalizar Cadastro
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M13 6l6 6-6 6" /></svg>
+        </button>
+      </form>
+    </div>
+
+    <div class="page-footer">
+      <span>© 2024 Portal de Estacionamento Institucional · Todos os direitos reservados.</span>
+      <span><a href="#">Termos</a><a href="#">Privacidade</a></span>
+    </div>
+  </div>
+</div>
+{% endblock %}
