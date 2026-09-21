@@ -286,3 +286,11 @@
     display: none;
   }
 }
+
+/* --- Compartilhado entre Dashboard e Meus Veículos --- */
+
+.vehicles-empty {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 20px 0 0;
+}

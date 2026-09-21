@@ -1,0 +1,25 @@
+# Ambiente
+.env
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Banco de dados local
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3
+
+# Django
+staticfiles/
+media/
+
+# Editores / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -4,7 +4,7 @@ from django.db import IntegrityError
 from django.shortcuts import render, redirect
 
 from apps.campuspark_acesso.models import RegistroAcesso, StatusAcesso
-from apps.campuspark_veiculo.models import Veiculo
+from apps.campuspark_veiculo.models import TipoVeiculo, Veiculo
 from .models import Aluno, Operador
 from .services import UsuarioService
 
@@ -176,8 +176,8 @@ def cadastro_veiculo_view(request):
             erros.append("Placa inválida. Use até 7 caracteres (ex: ABC1D23).")
 
         tipo_map = {
-            "automovel": Veiculo.TipoVeiculo.AUTOMOVEL,
-            "motocicleta": Veiculo.TipoVeiculo.MOTOCICLETA,
+            "automovel": TipoVeiculo.CARRO,
+            "motocicleta": TipoVeiculo.MOTO,
         }
 
         if not erros:
@@ -185,9 +185,11 @@ def cadastro_veiculo_view(request):
                 Veiculo.objects.create(
                     placa=valores["placa"],
                     aluno=request.aluno,
-                    tipo_veiculo=tipo_map.get(valores["tipo_veiculo"], Veiculo.TipoVeiculo.AUTOMOVEL),
-                    modelo_ano=valores["modelo_ano"],
+                    tipo=tipo_map.get(valores["tipo_veiculo"], TipoVeiculo.CARRO),
+                    modelo=valores["modelo_ano"],
                     seguro_ativo=seguro_ativo,
+                    renavam=None,
+                    tag_rfid=None,
                 )
             except IntegrityError:
                 erros.append("Já existe um veículo cadastrado com essa placa.")

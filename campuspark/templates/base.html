@@ -11,6 +11,16 @@
   {% block extra_css %}{% endblock %}
 </head>
 <body>
+  <div class="topo-decor"></div>
+
+  {% if messages %}
+  <ul class="mensagens">
+    {% for message in messages %}
+    <li class="mensagem mensagem--{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
   {% block content %}{% endblock %}
   <script src="{% static 'js/ui.js' %}"></script>
   {% block extra_js %}{% endblock %}

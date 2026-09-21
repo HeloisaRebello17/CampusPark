@@ -70,8 +70,14 @@
 
 ## 5. Fora do Escopo do MVP
 
-Reconhecimento facial real, integração física com leitor RFID, dashboard avançado, relatórios,
-notificações, aplicativo mobile, controle de vagas em tempo real e integrações externas.
+Reconhecimento facial real, integração física com leitor RFID, dashboard avançado (gráficos,
+relatórios), notificações, aplicativo mobile, integração real com sensores de vaga e integrações
+externas.
+
+> **Atualização (ADR-006):** login de administrador/operador e uma tela inicial com contadores de
+> veículos dentro do estacionamento (carro/moto) e capacidade máxima configurável de vagas foram
+> implementados a pedido do usuário do projeto, saindo do escopo "fora do MVP" original. Ver
+> `decisoes_tecnicas.md`, ADR-006.
 
 ## 6. Critério de Conclusão do MVP
 

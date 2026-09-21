@@ -108,3 +108,40 @@ a mesma interface que a implementação real usará depois.
 **Consequências:**
 - `INSTALLED_APPS` referencia `apps.usuario`, `apps.veiculo`, `apps.acesso` — necessário garantir
   `apps/__init__.py` e configurar `AppConfig.name` corretamente em cada `apps.py`.
+
+---
+
+## ADR-006 — Login de Operador (porteiro/administrador) e dashboard com controle de vagas
+
+**Contexto:** O documento de requisitos (seção 5, "Fora do Escopo do MVP") e o guia de
+desenvolvimento (seção 6) listam explicitamente "dashboard avançado" e "controle de vagas em tempo
+real" como fora do primeiro MVP. Ao mesmo tempo, RF15 exige que administradores gerenciem usuários,
+veículos, permissões e acessos, e RNF14 exige controle de acesso por perfil (administrador,
+operador, usuário comum) — o que pressupõe um login para esses perfis, ainda não implementado.
+
+**Decisão:** Implementar (1) login de `Operador` (perfis "Portaria" e "Administrador", via
+`TipoOperador` já modelado) com sessão própria (`request.session`), e (2) uma tela inicial
+("dashboard") pós-login mostrando: quantidade de carros/motos atualmente dentro do estacionamento
+(derivada de `RegistroAcesso` com `status=DENTRO`), capacidade máxima configurável de vagas por tipo
+de veículo (novo model `ConfiguracaoEstacionamento`, edição restrita a Administrador) e o histórico
+de entrada/saída (RF10). Essa decisão foi tomada sob pedido explícito do usuário do projeto,
+ciente da divergência com o escopo documentado do MVP.
+
+Como pré-requisito, o model `Veiculo` (até então incompleto em relação ao `modelo_dados.md`) foi
+completado com os campos já documentados (`tipo`, `tag_rfid`, `autorizado`, `renavam`, `fabricante`,
+`modelo`, `cor`, `data_criacao`) — sem isso não é possível diferenciar carro/moto no dashboard, nem
+o `AcessoService` (que já referenciava `tag_rfid`/`autorizado`) funcionava de fato.
+
+**Alternativas consideradas:**
+- Manter o escopo estritamente como documentado (sem dashboard nem controle de vagas), implementando
+  apenas o login de operador — descartada por pedido explícito do usuário.
+
+**Consequências:**
+- `apps/usuario` ganha `senha_hash` e `ativo` em `Operador` (login e desativação de conta,
+  espelhando o padrão já usado em `Aluno`).
+- `apps/acesso` ganha o model `ConfiguracaoEstacionamento` (capacidade máxima por tipo de veículo)
+  e as views `DashboardView`/`AtualizarVagasView`.
+- `requisitos.md` (seção 5) e `guia_desenvolvimento.md` (seção 6) devem ser lidos com a ressalva de
+  que login de operador e dashboard básico de vagas **deixaram de estar fora de escopo** a partir
+  desta decisão; "dashboard avançado" (gráficos, relatórios) e integração real com sensores de vaga
+  continuam fora do MVP.

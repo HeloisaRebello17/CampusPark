@@ -31,7 +31,7 @@ urlpatterns = [
     path("api/veiculo/", include("apps.campuspark_veiculo.urls")),
     path("api/acesso/", include("apps.campuspark_acesso.urls")),
 
-    # Telas
+    # Telas do aluno
     path("", RedirectView.as_view(pattern_name="login", permanent=False)),
     path("login/", usuario_pages.login_view, name="login"),
     path("cadastro/", usuario_pages.cadastro_view, name="cadastro"),
@@ -39,4 +39,8 @@ urlpatterns = [
     path("painel/", usuario_pages.dashboard_view, name="aluno-dashboard"),
     path("veiculos/", usuario_pages.meus_veiculos_view, name="meus-veiculos"),
     path("veiculos/novo/", usuario_pages.cadastro_veiculo_view, name="veiculo-cadastro"),
+
+    # Telas do operador/administrador
+    path("operador/", include("apps.campuspark_usuario.web_urls")),
+    path("operador/", include("apps.campuspark_acesso.web_urls")),
 ]

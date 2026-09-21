@@ -35,9 +35,13 @@ class Operador(models.Model):
     cpf = models.CharField(max_length=11, unique=True)
     nome_completo = models.CharField(max_length=200)
     email = models.EmailField(max_length=255)
-    senha_hash = models.CharField(max_length=255, blank=True)
+    senha_hash = models.CharField(max_length=255)
     ativo = models.BooleanField(default=True)
     data_criacao = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.nome_completo
+
+    @property
+    def is_administrador(self) -> bool:
+        return self.tipo_operador.descricao.strip().lower() == "administrador"

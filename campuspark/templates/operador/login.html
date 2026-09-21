@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Login — CampusPark{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/operador.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="login-tela">
+    <div class="login-card">
+        <img class="login-marca" src="{% static 'images/CampusPark_LogoAzul.png' %}" alt="CampusPark">
+        <h1>Acesso do Operador</h1>
+        <p class="login-subtitulo">Entre com suas credenciais para acessar o painel do<br>estacionamento do Campus Park.</p>
+
+        {% if erro %}
+            <p class="login-erro">{{ erro }}</p>
+        {% endif %}
+
+        <form method="post" action="{% url 'operador-login' %}">
+            {% csrf_token %}
+            <label for="cpf">CPF</label>
+            <input type="text" id="cpf" name="cpf" placeholder="Somente números" value="{{ cpf|default:'' }}" maxlength="14" required autofocus>
+
+            <label for="senha">Senha</label>
+            <input type="password" id="senha" name="senha" placeholder="Digite sua senha" required>
+
+            <button type="submit">Entrar</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

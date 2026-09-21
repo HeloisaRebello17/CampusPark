@@ -208,11 +208,6 @@
   font-size: 0.9rem;
 }
 
-.vehicles-empty {
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-}
-
 .vehicles-see-all {
   display: inline-block;
   margin-top: 16px;

@@ -90,13 +90,13 @@
               {% for veiculo in veiculos %}
               <li class="vehicle-list-item">
                 <span class="vehicle-icon">
-                  {% if veiculo.tipo_veiculo == "MOTOCICLETA" %}
+                  {% if veiculo.tipo == "moto" %}
                   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5" /><circle cx="18.5" cy="17.5" r="3.5" /><path d="M15 6a1 1 0 0 1 1-1h3M5.5 17.5 9 10h4l3 3.5M9 10 7 6H5" /></svg>
                   {% else %}
                   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M5 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm14 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5 17V9l2-5h10l2 5v8" /></svg>
                   {% endif %}
                 </span>
-                <span class="vehicle-plate">{{ veiculo.placa }}{% if veiculo.modelo_ano %} <span style="color:var(--color-text-faint);font-weight:600;">· {{ veiculo.modelo_ano }}</span>{% endif %}</span>
+                <span class="vehicle-plate">{{ veiculo.placa }}{% if veiculo.modelo %} <span style="color:var(--color-text-faint);font-weight:600;">· {{ veiculo.fabricante }} {{ veiculo.modelo }}</span>{% endif %}</span>
                 <span class="badge {% if veiculo.esta_no_campus %}badge-success{% else %}badge-inactive{% endif %}">
                   {% if veiculo.esta_no_campus %}No campus{% else %}Fora do campus{% endif %}
                 </span>

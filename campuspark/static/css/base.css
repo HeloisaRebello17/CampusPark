@@ -281,3 +281,131 @@ svg {
   width: 18px;
   height: 18px;
 }
+
+/* --- Tokens e componentes das telas do operador --- */
+
+:root {
+    --azul: #0b3d91;
+    --azul-escuro: #082a66;
+    --vermelho: #d81324;
+    --vermelho-escuro: #ad0f1d;
+    --cinza-fundo: #eaf2fb;
+    --cinza-borda: #dfe3e8;
+    --campo-fundo: #dceafb;
+    --texto: #10182c;
+    --texto-suave: #6b7280;
+    --branco: #ffffff;
+    --verde: #1a7f37;
+    --card-radius: 20px;
+}
+
+.topo-decor {
+    height: 4px;
+    background: #0d0d0d;
+    position: relative;
+}
+
+.topo-decor::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 56px;
+    height: 4px;
+    background: var(--vermelho);
+    border-radius: 0 0 4px 4px;
+}
+
+.mensagens {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.mensagem {
+    padding: 12px 20px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.mensagem--success {
+    background: #e6f4ea;
+    color: var(--verde);
+}
+
+.mensagem--error {
+    background: #fdecea;
+    color: var(--vermelho);
+}
+
+.mensagem--warning {
+    background: #fff8e1;
+    color: #8a6100;
+}
+
+.mensagem--info {
+    background: #e8f0fe;
+    color: var(--azul);
+}
+
+.erro-tela {
+    min-height: calc(100vh - 4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.erro-card {
+    background: var(--branco);
+    border-radius: var(--card-radius);
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(16, 24, 44, 0.08);
+}
+
+.erro-logo {
+    height: 36px;
+    margin-bottom: 24px;
+}
+
+.erro-codigo {
+    display: block;
+    font-size: 56px;
+    font-weight: 800;
+    color: var(--campo-fundo);
+    line-height: 1;
+}
+
+.erro-card h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--texto);
+    margin: 12px 0 8px;
+}
+
+.erro-card p {
+    color: var(--texto-suave);
+    font-size: 13px;
+    margin: 0 0 28px;
+}
+
+.erro-botao {
+    display: inline-block;
+    padding: 12px 28px;
+    border-radius: 10px;
+    background: var(--vermelho);
+    color: var(--branco);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.erro-botao:hover {
+    background: var(--vermelho-escuro);
+}

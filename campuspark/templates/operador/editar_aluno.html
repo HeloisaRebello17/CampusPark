@@ -1,0 +1,32 @@
+{% extends "operador/_painel.html" %}
+
+{% block title %}Editar Aluno — CampusPark{% endblock %}
+
+{% block painel_conteudo %}
+<h1 class="painel-titulo">Editar Aluno<span class="painel-titulo-linha"></span></h1>
+<p class="painel-subtitulo">{{ aluno.nome_completo }} — RA {{ aluno.matricula }}</p>
+
+<section class="painel painel--estreito">
+    <form method="post" class="form-edicao">
+        {% csrf_token %}
+        <label for="nome_completo">Nome completo</label>
+        <input type="text" id="nome_completo" name="nome_completo" value="{{ aluno.nome_completo }}" required>
+
+        <label for="matricula">Matrícula (RA)</label>
+        <input type="text" id="matricula" name="matricula" value="{{ aluno.matricula }}" maxlength="7" required>
+
+        <label for="email_institucional">E-mail institucional</label>
+        <input type="email" id="email_institucional" name="email_institucional" value="{{ aluno.email_institucional }}" required>
+
+        <label class="form-checkbox">
+            <input type="checkbox" name="ativo" {% if aluno.ativo %}checked{% endif %}>
+            Cadastro ativo (autorizado a acessar o estacionamento)
+        </label>
+
+        <div class="form-acoes">
+            <a href="{% url 'lista-alunos' %}" class="botao-secundario">Cancelar</a>
+            <button type="submit">Salvar alterações</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -135,19 +135,32 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   text-align: center;
   color: var(--color-text-faint);
-  margin-top: 32px;
-  padding: 0 24px;
+  margin-top: 40px;
+  padding: 28px 24px 0;
+  border-top: 1px solid var(--color-border);
 }
 
-.my-vehicle-footer .icon {
-  width: 22px;
-  height: 22px;
+.my-vehicle-footer-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-primary-lighter);
+  color: var(--color-primary);
+}
+
+.my-vehicle-footer-icon .icon {
+  width: 20px;
+  height: 20px;
 }
 
 .my-vehicle-footer p {
+  max-width: 320px;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;

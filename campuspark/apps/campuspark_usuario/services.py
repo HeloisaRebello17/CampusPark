@@ -1,5 +1,5 @@
 # services.py
-# Serviços de cadastro e autenticação de Aluno e Operador.
+# Regras de negócio de cadastro e autenticação de Aluno e Operador.
 from django.contrib.auth.hashers import make_password, check_password
 from .models import Aluno, Operador
 
@@ -22,14 +22,9 @@ class UsuarioService:
 class OperadorService:
 
     @staticmethod
-    def cadastrar_operador(dados: dict) -> Operador:
-        dados["senha_hash"] = make_password(dados.pop("senha"))
-        return Operador.objects.create(**dados)
-
-    @staticmethod
-    def autenticar(email: str, senha: str) -> Operador | None:
+    def autenticar(cpf: str, senha: str) -> Operador | None:
         try:
-            operador = Operador.objects.get(email=email, ativo=True)
+            operador = Operador.objects.select_related("tipo_operador").get(cpf=cpf, ativo=True)
         except Operador.DoesNotExist:
             return None
         return operador if check_password(senha, operador.senha_hash) else None
