@@ -1,18 +1,7 @@
 # services.py
-# Serviços de validação de acesso usando RFID e reconhecimento facial.
-from integrations.rfid_reader import ler_tag
-from integrations.facial_recognition import validar_rosto
-
-def validar_entrada(tag):
-    # Valida entrada apenas com RFID
-    return ler_tag(tag)
-
-def validar_saida(tag, imagem):
-    # Valida saída com RFID + facial
-    return ler_tag(tag) and validar_rosto(imagem)
-
+# Serviços de cadastro e autenticação de Aluno e Operador.
 from django.contrib.auth.hashers import make_password, check_password
-from .models import Aluno
+from .models import Aluno, Operador
 
 class UsuarioService:
 
@@ -28,3 +17,19 @@ class UsuarioService:
         except Aluno.DoesNotExist:
             return None
         return aluno if check_password(senha, aluno.senha_hash) else None
+
+
+class OperadorService:
+
+    @staticmethod
+    def cadastrar_operador(dados: dict) -> Operador:
+        dados["senha_hash"] = make_password(dados.pop("senha"))
+        return Operador.objects.create(**dados)
+
+    @staticmethod
+    def autenticar(email: str, senha: str) -> Operador | None:
+        try:
+            operador = Operador.objects.get(email=email, ativo=True)
+        except Operador.DoesNotExist:
+            return None
+        return operador if check_password(senha, operador.senha_hash) else None

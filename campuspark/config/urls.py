@@ -21,10 +21,22 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import RedirectView
+
+from apps.campuspark_usuario import pages as usuario_pages
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/usuario/", include("apps.campuspark_usuario.urls")),
     path("api/veiculo/", include("apps.campuspark_veiculo.urls")),
     path("api/acesso/", include("apps.campuspark_acesso.urls")),
+
+    # Telas
+    path("", RedirectView.as_view(pattern_name="login", permanent=False)),
+    path("login/", usuario_pages.login_view, name="login"),
+    path("cadastro/", usuario_pages.cadastro_view, name="cadastro"),
+    path("logout/", usuario_pages.logout_view, name="logout"),
+    path("painel/", usuario_pages.dashboard_view, name="aluno-dashboard"),
+    path("veiculos/", usuario_pages.meus_veiculos_view, name="meus-veiculos"),
+    path("veiculos/novo/", usuario_pages.cadastro_veiculo_view, name="veiculo-cadastro"),
 ]

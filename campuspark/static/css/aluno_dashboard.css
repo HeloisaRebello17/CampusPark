@@ -1,0 +1,256 @@
+/* aluno_dashboard.css — painel inicial do aluno */
+
+.page-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.page-header-row .page-title {
+  margin-bottom: 0;
+}
+
+.page-header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.page-header-actions .btn {
+  padding: 12px 18px;
+  font-size: 0.85rem;
+}
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.dash-col-side,
+.dash-col-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.profile-card {
+  padding: 28px 24px;
+  text-align: center;
+  position: relative;
+}
+
+.profile-avatar {
+  width: 64px;
+  height: 64px;
+  font-size: 1.4rem;
+  margin: 0 auto 14px;
+}
+
+.profile-status {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.profile-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+
+.profile-role {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  margin-bottom: 22px;
+}
+
+.profile-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+  border-top: 1px solid var(--color-border);
+  padding-top: 18px;
+}
+
+.profile-meta-value {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-top: 4px;
+  word-break: break-word;
+}
+
+.capacity-card {
+  padding: 24px;
+  background: var(--color-blue-tint);
+  border-color: var(--color-blue-tint-border);
+}
+
+.capacity-value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 6px 0 8px;
+}
+
+.capacity-desc {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.visit-card {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 20px 24px;
+  border-left: 3px solid var(--color-primary);
+  flex-wrap: wrap;
+}
+
+.visit-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.visit-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.visit-value {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.visit-empty {
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+}
+
+.vehicles-card {
+  padding: 24px;
+}
+
+.vehicles-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.vehicles-card-header h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.vehicles-card-header p {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.vehicles-count {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--color-text-faint);
+  white-space: nowrap;
+}
+
+.vehicle-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vehicle-list-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.vehicle-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-blue-tint);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.vehicle-plate {
+  flex: 1;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.vehicles-empty {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.vehicles-see-all {
+  display: inline-block;
+  margin-top: 16px;
+  color: var(--color-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.map-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 28px;
+  background: linear-gradient(135deg, #1f2430, #3a4152);
+  border: none;
+  color: var(--color-white);
+  flex-wrap: wrap;
+}
+
+.map-banner h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.map-banner p {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 360px;
+}
+
+.map-banner-btn {
+  flex-shrink: 0;
+}
+
+@media (max-width: 860px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+}

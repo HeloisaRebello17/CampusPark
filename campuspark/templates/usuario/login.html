@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Entrar · CampusPark{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/auth.css' %}" />{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-topbar">
+      <div class="auth-brand">
+        <span class="auth-brand-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18" /><path d="M5 21V9l7-5 7 5v12" /><path d="M9 21v-6h6v6" /><path d="M9 9h.01M15 9h.01M12 6h.01" /></svg>
+        </span>
+        CAMPUS PARK
+      </div>
+    </div>
+
+    <h1 class="auth-heading auth-heading--left">Acesso do Aluno</h1>
+    <p class="auth-subtext auth-subtext--left">Bem-vindo ao sistema de controle de estacionamento acadêmico.</p>
+
+    {% if erro %}<p style="color:var(--color-primary);font-size:0.85rem;margin-bottom:16px;">{{ erro }}</p>{% endif %}
+
+    <form class="auth-form" method="post" novalidate>
+      {% csrf_token %}
+      <div class="field">
+        <label class="field-label" for="identificador">RA (Registro Acadêmico)</label>
+        <input class="field-input" type="text" id="identificador" name="identificador" placeholder="Ex: 2201934" />
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="senha">Senha</label>
+        <div class="password-field">
+          <input class="field-input" type="password" id="senha" name="senha" placeholder="Digite sua senha" />
+        </div>
+      </div>
+
+      <div class="auth-options auth-options--end">
+        <a href="#">Esqueceu sua senha?</a>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">
+        Entrar
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M13 6l6 6-6 6" /></svg>
+      </button>
+    </form>
+
+    <p class="auth-switch">Ainda não tem uma conta? <a href="{% url 'cadastro' %}">CRIAR CONTA</a></p>
+  </div>
+
+  <div class="auth-footer">
+    <strong>Institutional Registry</strong>
+    <div class="auth-footer-links">
+      <a href="#">Privacy Policy</a><span>·</span><a href="#">Terms of Service</a><span>·</span><a href="#">Support</a>
+    </div>
+    <div>© 2024 Institutional Registry. All rights reserved.</div>
+  </div>
+</div>
+{% endblock %}
