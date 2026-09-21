@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import models
 from apps.campuspark_veiculo.models import Veiculo
 from apps.campuspark_usuario.models import Operador
@@ -21,3 +22,30 @@ class RegistroAcesso(models.Model):
 
     def __str__(self):
         return f"{self.veiculo.placa} - {self.status}"
+
+    @property
+    def permanencia(self):
+        """Tempo decorrido desde a entrada (até agora, ou até a saída se já finalizada)."""
+        fim = self.data_saida or timezone.now()
+        return fim - self.data_entrada
+        
+
+
+class ConfiguracaoEstacionamento(models.Model):
+    """Capacidade máxima de vagas do estacionamento, por tipo de veículo."""
+
+    vagas_carro = models.PositiveIntegerField(default=0)
+    vagas_moto = models.PositiveIntegerField(default=0)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Configuração do Estacionamento"
+        verbose_name_plural = "Configuração do Estacionamento"
+
+    def __str__(self):
+        return f"{self.vagas_carro} vaga(s) carro / {self.vagas_moto} vaga(s) moto"
+
+    @classmethod
+    def obter(cls) -> "ConfiguracaoEstacionamento":
+        config, _ = cls.objects.get_or_create(pk=1)
+        return config

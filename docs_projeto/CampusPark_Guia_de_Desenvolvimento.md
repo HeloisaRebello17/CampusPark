@@ -330,6 +330,11 @@ Dado o seu módulo (Segurança/Acesso), o foco de código deve estar em `apps/ac
 
 ## 6. Próximos Passos Fora do MVP (não implementar agora)
 
-Reconhecimento facial real, integração física com leitor RFID, dashboard avançado, relatórios,
-notificações, app mobile, controle de vagas em tempo real e integrações externas — mantidos fora
-do escopo da primeira quinzena conforme o documento do MVP.
+Reconhecimento facial real, integração física com leitor RFID, dashboard avançado (gráficos,
+relatórios), notificações, app mobile, integração real com sensores de vaga e integrações externas —
+mantidos fora do escopo da primeira quinzena conforme o documento do MVP.
+
+> **Atualização (ADR-006):** login de administrador/operador (`OperadorLoginView`) e uma tela
+> inicial (`DashboardView`) com contadores de carros/motos dentro do estacionamento, capacidade
+> máxima configurável de vagas (`ConfiguracaoEstacionamento`) e histórico de acessos (RF10) já foram
+> implementados — ver `decisoes_tecnicas.md`, ADR-006.

@@ -1,0 +1,104 @@
+{% extends "operador/_painel.html" %}
+
+{% block title %}Lista de Alunos — CampusPark{% endblock %}
+
+{% block painel_conteudo %}
+<h1 class="painel-titulo">Gestão de Usuários e Veículos<span class="painel-titulo-linha"></span></h1>
+<p class="painel-subtitulo">Controle de acesso e registros acadêmicos</p>
+
+<section class="cards">
+    <div class="card">
+        <span class="card-titulo">Total Alunos</span>
+        <span class="card-valor">{{ total_alunos }}</span>
+    </div>
+    <div class="card">
+        <span class="card-titulo">Veículos Ativos</span>
+        <span class="card-valor">{{ veiculos_ativos }}</span>
+    </div>
+    <div class="card card--destaque">
+        <span class="card-titulo">Vagas Livres</span>
+        <span class="card-valor">{{ vagas_livres }}</span>
+    </div>
+</section>
+
+<section class="painel">
+    <form method="get" class="barra-filtros">
+        <select name="status" onchange="this.form.submit()">
+            <option value="" {% if not status_filtro %}selected{% endif %}>Status: Todos</option>
+            <option value="ativo" {% if status_filtro == "ativo" %}selected{% endif %}>Status: Ativo</option>
+            <option value="inativo" {% if status_filtro == "inativo" %}selected{% endif %}>Status: Inativo</option>
+        </select>
+        <input type="search" name="busca" value="{{ busca }}" placeholder="Buscar aluno ou placa...">
+        <button type="submit">Buscar</button>
+    </form>
+
+    <table class="tabela-alunos">
+        <thead>
+            <tr>
+                <th>Nome do Aluno</th>
+                <th>Veículo (Marca/Modelo/Placa)</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for linha in linhas %}
+            <tr>
+                <td>
+                    <div class="aluno-nome">
+                        <span class="avatar">{{ linha.iniciais }}</span>
+                        <div>
+                            <strong>{{ linha.aluno.nome_completo }}</strong>
+                            <div class="aluno-ra">RA: {{ linha.aluno.matricula }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    {% if linha.veiculo %}
+                        <div>{{ linha.veiculo.fabricante|default:"" }} {{ linha.veiculo.modelo|default:"" }}</div>
+                        <div class="veiculo-placa">{{ linha.veiculo.placa }}</div>
+                    {% else %}
+                        <span class="aluno-ra">Sem veículo cadastrado</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="status status--{{ linha.aluno.ativo|yesno:'ativo,inativo' }}">
+                        {{ linha.aluno.ativo|yesno:"Ativo,Inativo" }}
+                    </span>
+                </td>
+                <td>
+                    {% if operador.is_administrador %}
+                        <a class="botao-editar" href="{% url 'editar-aluno' linha.aluno.id %}">Editar</a>
+                    {% else %}
+                        <span class="aluno-ra">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="tabela-vazia">Nenhum aluno encontrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if pagina.paginator.num_pages > 1 %}
+    <div class="paginacao">
+        <span class="paginacao-info">
+            Mostrando {{ pagina.start_index }}-{{ pagina.end_index }} de {{ pagina.paginator.count }} alunos
+        </span>
+        <div class="paginacao-paginas">
+            {% if pagina.has_previous %}
+                <a href="?pagina={{ pagina.previous_page_number }}&busca={{ busca }}&status={{ status_filtro }}">&lt;</a>
+            {% endif %}
+            {% for numero in pagina.paginator.page_range %}
+                <a href="?pagina={{ numero }}&busca={{ busca }}&status={{ status_filtro }}" class="{% if numero == pagina.number %}ativo{% endif %}">{{ numero }}</a>
+            {% endfor %}
+            {% if pagina.has_next %}
+                <a href="?pagina={{ pagina.next_page_number }}&busca={{ busca }}&status={{ status_filtro }}">&gt;</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
