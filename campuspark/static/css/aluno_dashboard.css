@@ -190,18 +190,6 @@
   border-radius: var(--radius-md);
 }
 
-.vehicle-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--color-blue-tint);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
 .vehicle-plate {
   flex: 1;
   font-weight: 700;

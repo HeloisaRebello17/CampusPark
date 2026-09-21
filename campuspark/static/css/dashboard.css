@@ -294,3 +294,20 @@
   color: var(--color-text-muted);
   margin: 20px 0 0;
 }
+
+.vehicle-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.vehicle-icon--muted {
+  background: var(--color-inactive-bg);
+  color: var(--color-text-faint);
+}

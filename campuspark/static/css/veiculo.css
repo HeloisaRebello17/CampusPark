@@ -90,7 +90,8 @@
   border: 1px solid var(--color-border);
   border-left: 3px solid var(--color-primary);
   border-radius: var(--radius-lg);
-  padding: 20px 22px;
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
 }
 
 .my-vehicle-card.is-inactive {
