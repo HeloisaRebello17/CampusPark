@@ -24,6 +24,8 @@ from urllib.parse import urlparse, parse_qsl
 
 from pathlib import Path
 
+load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -32,12 +34,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-gvs=nzah6exy$_n&656ra793vq4(pz2k)b8(zinv$kk%!9dir3'
+SECRET_KEY = os.getenv(
+    "DJANGO_SECRET_KEY",
+    'django-insecure-gvs=nzah6exy$_n&656ra793vq4(pz2k)b8(zinv$kk%!9dir3',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = []
+# Lista separada por virgula no .env, ex: ALLOWED_HOSTS=localhost,127.0.0.1,192.168.0.15
+_allowed_hosts = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1")
+ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts.split(",") if h.strip()]
 
 
 # Application definition
@@ -71,7 +78,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -89,8 +96,6 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-load_dotenv()
-
 # Replace the DATABASES section of your settings.py with this
 tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
 
@@ -103,7 +108,6 @@ DATABASES = {
         'HOST': tmpPostgres.hostname,
         'PORT': 5432,
         'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
-        'CONN_MAX_AGE': 60,
     }
 }
 
@@ -143,7 +147,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 
 # Email
