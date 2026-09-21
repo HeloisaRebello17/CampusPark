@@ -27,4 +27,7 @@ urlpatterns = [
     path("api/usuario/", include("apps.campuspark_usuario.urls")),
     path("api/veiculo/", include("apps.campuspark_veiculo.urls")),
     path("api/acesso/", include("apps.campuspark_acesso.urls")),
+    path("api/biometria/", include("apps.campuspark_biometria.urls")),
+    path("operador/", include("apps.campuspark_usuario.web_urls")),
+    path("operador/", include("apps.campuspark_acesso.web_urls")),
 ]
