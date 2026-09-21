@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import models
 from apps.campuspark_veiculo.models import Veiculo
 from apps.campuspark_usuario.models import Operador
@@ -21,6 +22,13 @@ class RegistroAcesso(models.Model):
 
     def __str__(self):
         return f"{self.veiculo.placa} - {self.status}"
+
+    @property
+    def permanencia(self):
+        """Tempo decorrido desde a entrada (até agora, ou até a saída se já finalizada)."""
+        fim = self.data_saida or timezone.now()
+        return fim - self.data_entrada
+        
 
 
 class ConfiguracaoEstacionamento(models.Model):
