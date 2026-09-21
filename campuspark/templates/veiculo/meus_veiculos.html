@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Meus Veículos · CampusPark{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
+<link rel="stylesheet" href="{% static 'css/veiculo.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="app-shell">
+  {% include "partials/aluno_sidebar.html" with active="meus-veiculos" %}
+
+  <div class="page-main">
+    {% include "partials/aluno_topbar.html" %}
+
+    <div class="page-content">
+      <h1 class="page-title">Meus Veículos</h1>
+      <p class="page-subtitle">Gerencie seus veículos autorizados para o estacionamento do campus.</p>
+
+      <a href="{% url 'veiculo-cadastro' %}" class="btn btn-primary btn-block my-vehicle-add">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+        Cadastrar Novo Veículo
+      </a>
+
+      {% if veiculos %}
+      <div class="my-vehicle-list">
+        {% for veiculo in veiculos %}
+        <div class="my-vehicle-card {% if veiculo.autorizado %}is-active{% else %}is-inactive{% endif %}">
+          <div class="my-vehicle-card-header">
+            <span class="stat-label">Placa</span>
+            <span class="badge {% if veiculo.autorizado %}badge-success{% else %}badge-inactive{% endif %}">
+              {% if veiculo.autorizado %}Ativo{% else %}Inativo{% endif %}
+            </span>
+          </div>
+          <div class="my-vehicle-plate">{{ veiculo.placa|slice:":3" }}-{{ veiculo.placa|slice:"3:" }}</div>
+          <div class="my-vehicle-info">
+            <span class="vehicle-icon{% if not veiculo.autorizado %} vehicle-icon--muted{% endif %}">
+              {% if veiculo.tipo == "moto" %}
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5" /><circle cx="18.5" cy="17.5" r="3.5" /><path d="M15 6a1 1 0 0 1 1-1h3M5.5 17.5 9 10h4l3 3.5M9 10 7 6H5" /></svg>
+              {% else %}
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M5 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm14 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5 17V9l2-5h10l2 5v8" /></svg>
+              {% endif %}
+            </span>
+            <div>
+              <div class="my-vehicle-model">{% if veiculo.modelo %}{{ veiculo.fabricante }} {{ veiculo.modelo }}{% else %}Modelo não informado{% endif %}</div>
+              <div class="my-vehicle-type">{% if veiculo.cor %}{{ veiculo.cor }} • {% endif %}{{ veiculo.get_tipo_display }}</div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="vehicles-empty">Você ainda não cadastrou nenhum veículo.</p>
+      {% endif %}
+
+      <div class="my-vehicle-footer">
+        <span class="my-vehicle-footer-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /></svg>
+        </span>
+        <p>Acesso garantido apenas para veículos validados pela segurança do Campus Park.</p>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>© 2024 Portal de Estacionamento Institucional · Todos os direitos reservados.</span>
+      <span><a href="#">Termos</a><a href="#">Privacidade</a></span>
+    </div>
+  </div>
+</div>
+{% endblock %}

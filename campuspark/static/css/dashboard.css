@@ -1,0 +1,313 @@
+/* dashboard.css — casco compartilhado (sidebar + topbar) dos painéis de aluno e admin */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* --- Sidebar --- */
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 28px 18px;
+  background: var(--color-white);
+  border-right: 1px solid var(--color-border);
+}
+
+.sidebar--tinted {
+  background: var(--color-primary-lighter);
+  border-right-color: #f6dede;
+}
+
+.sidebar-brand {
+  padding: 0 10px;
+  margin-bottom: 32px;
+}
+
+.sidebar-brand-name {
+  color: var(--color-primary);
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+}
+
+.sidebar-brand-sub {
+  color: var(--color-text-faint);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-left: 3px solid transparent;
+}
+
+.nav-item:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.nav-item.is-active {
+  background: var(--color-white);
+  color: var(--color-primary);
+  border-left-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar--tinted .nav-item.is-active {
+  background: var(--color-white);
+}
+
+.sidebar:not(.sidebar--tinted) .nav-item.is-active {
+  background: var(--color-primary-light);
+}
+
+.sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+}
+
+.sidebar-footer .nav-item.is-logout {
+  color: var(--color-primary);
+}
+
+.sidebar-institution {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.sidebar-institution-name {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.sidebar-institution-sub {
+  font-size: 0.68rem;
+  color: var(--color-text-faint);
+}
+
+/* --- Topbar --- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 32px;
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.topbar-brand {
+  color: var(--color-primary);
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  display: none;
+}
+
+.topbar-search {
+  flex: 1;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 10px 16px;
+  color: var(--color-text-faint);
+}
+
+.topbar-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.85rem;
+  width: 100%;
+  color: var(--color-text);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  color: var(--color-text-muted);
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar-user .avatar-img,
+.topbar-user .avatar {
+  width: 38px;
+  height: 38px;
+}
+
+.topbar-user-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.topbar-user-meta {
+  font-size: 0.72rem;
+  color: var(--color-text-faint);
+}
+
+/* --- Conteúdo da página --- */
+
+.page-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-content {
+  padding: 32px;
+  max-width: 880px;
+}
+
+.page-content--wide {
+  max-width: none;
+}
+
+.page-eyebrow {
+  color: var(--color-primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.page-title {
+  font-size: 1.7rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.page-title-accent {
+  display: inline-block;
+  width: 34px;
+  height: 4px;
+  background: var(--color-primary);
+  border-radius: var(--radius-pill);
+  margin-bottom: 12px;
+}
+
+.page-subtitle {
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.page-footer {
+  margin-top: auto;
+  padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--color-text-faint);
+  font-size: 0.78rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.page-footer a {
+  color: var(--color-text-faint);
+  margin-left: 16px;
+}
+
+.page-footer a:hover {
+  color: var(--color-primary);
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 20;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+
+  .sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .topbar-brand {
+    display: block;
+  }
+
+  .topbar-search {
+    display: none;
+  }
+}
+
+/* --- Compartilhado entre Dashboard e Meus Veículos --- */
+
+.vehicles-empty {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 20px 0 0;
+}
+
+.vehicle-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.vehicle-icon--muted {
+  background: var(--color-inactive-bg);
+  color: var(--color-text-faint);
+}

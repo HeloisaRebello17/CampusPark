@@ -1,0 +1,237 @@
+/* auth.css — telas de login e cadastro (aluno / admin) */
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  gap: 28px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 40px 36px;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-card::after {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 140px;
+  height: 140px;
+  background: var(--color-primary-lighter);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.auth-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-primary);
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}
+
+.auth-brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: var(--color-white);
+  flex-shrink: 0;
+}
+
+.auth-brand-icon .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.auth-heading {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.auth-heading--left {
+  text-align: left;
+}
+
+.auth-subtext {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 28px;
+}
+
+.auth-subtext--left {
+  text-align: left;
+}
+
+/* Upload de foto */
+
+.photo-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.photo-upload-circle {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: var(--color-blue-tint);
+  border: 1px dashed var(--color-blue-tint-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-faint);
+  cursor: pointer;
+  background-size: cover;
+  background-position: center;
+}
+
+.photo-upload-circle.has-photo {
+  border-style: solid;
+  color: transparent;
+}
+
+.photo-upload-edit {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-white);
+  border: 2px solid var(--color-white);
+}
+
+.photo-upload-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.auth-switch a {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.auth-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.auth-options--end {
+  justify-content: flex-end;
+}
+
+.auth-options a {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.auth-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-muted);
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field .field-input {
+  padding-right: 46px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--color-text-faint);
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.auth-footer {
+  text-align: center;
+  color: var(--color-text-faint);
+  font-size: 0.78rem;
+  line-height: 1.8;
+}
+
+.auth-footer strong {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+.auth-footer-links a {
+  color: var(--color-text-faint);
+}
+
+.auth-footer-links a:hover {
+  color: var(--color-primary);
+}
+
+.auth-footer-links span {
+  margin: 0 6px;
+}

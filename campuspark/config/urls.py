@@ -21,6 +21,9 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import RedirectView
+
+from apps.campuspark_usuario import pages as usuario_pages
 
 urlpatterns = [
     path("admin/", admin.site.urls),

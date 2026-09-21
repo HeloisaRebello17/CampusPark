@@ -1,0 +1,170 @@
+/* veiculo.css — formulário de Cadastro de Veículo (painel do aluno) */
+
+.vehicle-type-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.vehicle-type-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  color: var(--color-text-muted);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.vehicle-type-option svg {
+  width: 26px;
+  height: 26px;
+}
+
+.vehicle-type-option.is-selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-lighter);
+  color: var(--color-primary);
+}
+
+.insurance-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin: 24px 0 32px;
+}
+
+.insurance-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-blue-tint);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.insurance-card-text {
+  flex: 1;
+}
+
+.insurance-card-title {
+  font-weight: 700;
+  font-size: 0.92rem;
+  margin-bottom: 2px;
+}
+
+.insurance-card-desc {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+/* --- Meus Veículos --- */
+
+.my-vehicle-add {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 0.9rem;
+  margin: 24px 0 28px;
+}
+
+.my-vehicle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.my-vehicle-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.my-vehicle-card.is-inactive {
+  border-left-color: var(--color-border);
+}
+
+.my-vehicle-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.my-vehicle-plate {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin-bottom: 16px;
+}
+
+.my-vehicle-card.is-inactive .my-vehicle-plate {
+  color: var(--color-text-faint);
+}
+
+.my-vehicle-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.my-vehicle-model {
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.my-vehicle-type {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.my-vehicle-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  color: var(--color-text-faint);
+  margin-top: 40px;
+  padding: 28px 24px 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.my-vehicle-footer-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-primary-lighter);
+  color: var(--color-primary);
+}
+
+.my-vehicle-footer-icon .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.my-vehicle-footer p {
+  max-width: 320px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.6;
+}

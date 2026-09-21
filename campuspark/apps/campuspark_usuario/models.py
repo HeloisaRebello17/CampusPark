@@ -14,7 +14,7 @@ class Aluno(models.Model):
     matricula = models.CharField(max_length=7, unique=True)
     cpf = models.CharField(max_length=11, unique=True)
     nome_completo = models.CharField(max_length=200)
-    email_institucional = models.EmailField(max_length=64)
+    email_institucional = models.EmailField(max_length=64, unique=True)
     senha_hash = models.CharField(max_length=255)
     ativo = models.BooleanField(default=True)
     data_criacao = models.DateTimeField(auto_now_add=True)
