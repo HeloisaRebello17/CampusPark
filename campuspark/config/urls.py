@@ -30,6 +30,7 @@ urlpatterns = [
     path("api/usuario/", include("apps.campuspark_usuario.urls")),
     path("api/veiculo/", include("apps.campuspark_veiculo.urls")),
     path("api/acesso/", include("apps.campuspark_acesso.urls")),
+    path("api/biometria/", include("apps.campuspark_biometria.urls")),
 
     # Telas do aluno
     path("", RedirectView.as_view(pattern_name="login", permanent=False)),
