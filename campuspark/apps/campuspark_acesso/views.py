@@ -1,3 +1,4 @@
+from apps.campuspark_usuario.models import Aluno
 from django.contrib import messages
 from django.shortcuts import redirect, render
 from django.utils.decorators import method_decorator
@@ -67,8 +68,19 @@ class AtualizarVagasView(View):
 class EntradaView(APIView):
     def post(self, request):
         tag = request.data.get("tag_rfid")
+        aluno_id = request.data.get("aluno_id")  # vem do reconhecimento facial (Thomas)
+
+        aluno_reconhecido = None
+        if aluno_id is not None:
+            aluno_reconhecido = Aluno.objects.filter(pk=aluno_id).first()
+            if aluno_reconhecido is None:
+                return Response(
+                    {"erro": "Aluno reconhecido pela face não encontrado no sistema."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         try:
-            registro = AcessoService.validar_entrada(tag)
+            registro = AcessoService.validar_entrada(tag, aluno_reconhecido=aluno_reconhecido)
         except AcessoNegado as e:
             return Response({"erro": str(e)}, status=status.HTTP_403_FORBIDDEN)
         return Response(RegistroAcessoSerializer(registro).data, status=201)
