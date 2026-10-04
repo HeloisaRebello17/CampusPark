@@ -96,9 +96,6 @@ class CadastroAlunoViewTest(TestCase):
         self.assertTrue(Aluno.objects.filter(cpf="12345678901").exists())
 
     def test_cpf_com_letras_e_simbolos_remove_antes_de_validar(self):
-        # Letras e simbolos sao removidos antes da validacao, entao um CPF
-        # como "abc.123-45" vira "12345" (5 digitos) e falha por tamanho,
-        # nao por conter caracteres invalidos.
         resp = self.client.post(self.url, self.dados_validos(cpf="abc.123-45"))
         self.assertContains(resp, "O CPF deve conter exatamente 11 números.", status_code=400)
 
@@ -177,25 +174,45 @@ class CadastroVeiculoViewTest(TestCase):
         self.assertIsNone(veiculo.renavam)
 
     def test_tipo_motocicleta_mapeia_para_moto(self):
-        self.client.post(self.url, {"tipo_veiculo": "motocicleta", "placa": "XYZ9876", "modelo_ano": ""})
+        self.client.post(self.url, {"tipo_veiculo": "motocicleta", "placa": "XYZ9876", "modelo_ano": "Honda CB 500F 2021"})
         self.assertTrue(Veiculo.objects.filter(placa="XYZ9876", tipo="moto").exists())
 
     def test_placa_e_normalizada_para_maiuscula_sem_traco_ou_espaco(self):
-        self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "abc-12 34", "modelo_ano": ""})
+        self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "abc-12 34", "modelo_ano": "Honda Civic 2022"})
         self.assertTrue(Veiculo.objects.filter(placa="ABC1234").exists())
 
     def test_placa_vazia_mostra_erro(self):
-        resp = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "", "modelo_ano": ""})
+        resp = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "", "modelo_ano": "Honda Civic 2022"})
         self.assertContains(resp, "Informe a placa do veículo.", status_code=400)
         self.assertEqual(Veiculo.objects.count(), 0)
 
     def test_placa_remove_caracteres_especiais(self):
-        self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "AB#C-12!34", "modelo_ano": ""})
+        self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "AB#C-12!34", "modelo_ano": "Honda Civic 2022"})
         self.assertTrue(Veiculo.objects.filter(placa="ABC1234").exists())
 
+    def test_modelo_ano_vazio_mostra_erro(self):
+        resp = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "ABC1234", "modelo_ano": ""})
+        self.assertContains(resp, "Informe o modelo e ano do veículo.", status_code=400)
+        self.assertEqual(Veiculo.objects.count(), 0)
+
     def test_placa_somente_espacos_mostra_erro(self):
-        resp = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "   ", "modelo_ano": ""})
+        resp = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "   ", "modelo_ano": "Honda Civic 2022"})
         self.assertContains(resp, "Informe a placa do veículo.", status_code=400)
+        self.assertEqual(Veiculo.objects.count(), 0)
+
+    def test_placa_formato_mercosul_com_letra_na_quinta_posicao_e_aceita(self):
+        resp = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "ABC1D23", "modelo_ano": "Honda Civic 2022"})
+        self.assertRedirects(resp, reverse("aluno-dashboard"))
+        self.assertTrue(Veiculo.objects.filter(placa="ABC1D23").exists())
+
+    def test_placa_so_numeros_mostra_erro_de_formato(self):
+        resp = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "1234567", "modelo_ano": ""})
+        self.assertContains(resp, "Placa inválida. Use o formato Mercosul", status_code=400)
+        self.assertEqual(Veiculo.objects.count(), 0)
+
+    def test_placa_curta_demais_mostra_erro_de_formato(self):
+        resp = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "ABC123", "modelo_ano": ""})
+        self.assertContains(resp, "Placa inválida. Use o formato Mercosul", status_code=400)
         self.assertEqual(Veiculo.objects.count(), 0)
 
     def test_placa_somente_simbolos_mostra_erro(self):
@@ -205,16 +222,13 @@ class CadastroVeiculoViewTest(TestCase):
 
     def test_placa_duplicada_mostra_erro_e_nao_duplica(self):
         Veiculo.objects.create(aluno=self.aluno, placa="ABC1234", tipo="carro")
-        resp = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "ABC1234", "modelo_ano": ""})
+        resp = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "ABC1234", "modelo_ano": "Honda Civic 2022"})
         self.assertContains(resp, "Já existe um veículo cadastrado com essa placa.", status_code=400)
         self.assertEqual(Veiculo.objects.filter(placa="ABC1234").count(), 1)
 
     def test_dois_veiculos_sem_tag_rfid_nao_colidem(self):
-        # Regressao: tag_rfid/renavam nao podem ficar como string vazia (o
-        # default do Django para CharField), senao o segundo veiculo sem tag
-        # esbarra num erro de unicidade que nao tem nada a ver com a placa.
-        primeiro = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "AAA1111", "modelo_ano": ""})
-        segundo = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "BBB2222", "modelo_ano": ""})
+        primeiro = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "AAA1111", "modelo_ano": "Honda Civic 2022"})
+        segundo = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "BBB2222", "modelo_ano": "Fiat Uno 2019"})
         self.assertRedirects(primeiro, reverse("aluno-dashboard"))
         self.assertRedirects(segundo, reverse("aluno-dashboard"))
         self.assertEqual(Veiculo.objects.filter(aluno=self.aluno).count(), 2)

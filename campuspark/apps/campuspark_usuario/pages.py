@@ -13,6 +13,8 @@ from .services import UsuarioService
 SESSION_ALUNO_ID = "aluno_id"
 SESSION_OPERADOR_ID = "operador_id"
 
+PLACA_REGEX = re.compile(r"^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$")
+
 
 def aluno_required(view_func):
     @wraps(view_func)
@@ -175,8 +177,11 @@ def cadastro_veiculo_view(request):
         erros = []
         if not valores["placa"]:
             erros.append("Informe a placa do veículo.")
-        elif len(valores["placa"]) > 7:
-            erros.append("Placa inválida. Use até 7 caracteres (ex: ABC1D23).")
+        elif not PLACA_REGEX.match(valores["placa"]):
+            erros.append("Placa inválida. Use o formato Mercosul: 3 letras e 4 números, ex: ABC1D23.")
+
+        if not valores["modelo_ano"]:
+            erros.append("Informe o modelo e ano do veículo.")
 
         tipo_map = {
             "automovel": TipoVeiculo.CARRO,
