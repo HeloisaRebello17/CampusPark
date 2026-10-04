@@ -41,13 +41,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Força maiúsculas em campos marcados (ex.: placa do veículo)
-  document.querySelectorAll("[data-uppercase]").forEach((input) => {
+  // Placa do veículo: maiúsculas, só letras e números (sem espaço/traço/símbolo)
+  document.querySelectorAll("[data-placa-mask]").forEach((input) => {
     input.addEventListener("input", () => {
-      const inicio = input.selectionStart;
-      const fim = input.selectionEnd;
-      input.value = input.value.toUpperCase();
-      input.setSelectionRange(inicio, fim);
+      input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
     });
   });
 
@@ -56,6 +53,23 @@ document.addEventListener("DOMContentLoaded", () => {
     input.addEventListener("input", () => {
       input.value = input.value.replace(/\D/g, "");
     });
+  });
+
+  // Máscara de CPF: 000.000.000-00, formatada enquanto digita
+  document.querySelectorAll("[data-cpf-mask]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const digitos = input.value.replace(/\D/g, "").slice(0, 11);
+      let formatado = digitos;
+      if (digitos.length > 9) {
+        formatado = `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-${digitos.slice(9)}`;
+      } else if (digitos.length > 6) {
+        formatado = `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6)}`;
+      } else if (digitos.length > 3) {
+        formatado = `${digitos.slice(0, 3)}.${digitos.slice(3)}`;
+      }
+      input.value = formatado;
+    });
+    input.dispatchEvent(new Event("input"));
   });
 
   // Menu do sidebar em telas pequenas

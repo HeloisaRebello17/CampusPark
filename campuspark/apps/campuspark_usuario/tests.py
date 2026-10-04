@@ -90,6 +90,18 @@ class CadastroAlunoViewTest(TestCase):
         resp = self.client.post(self.url, self.dados_validos(senha="123"))
         self.assertContains(resp, "A senha deve ter pelo menos 6 caracteres.", status_code=400)
 
+    def test_cpf_com_pontuacao_e_aceito_normalizado(self):
+        resp = self.client.post(self.url, self.dados_validos(cpf="123.456.789-01"))
+        self.assertRedirects(resp, reverse("veiculo-cadastro"))
+        self.assertTrue(Aluno.objects.filter(cpf="12345678901").exists())
+
+    def test_cpf_com_letras_e_simbolos_remove_antes_de_validar(self):
+        # Letras e simbolos sao removidos antes da validacao, entao um CPF
+        # como "abc.123-45" vira "12345" (5 digitos) e falha por tamanho,
+        # nao por conter caracteres invalidos.
+        resp = self.client.post(self.url, self.dados_validos(cpf="abc.123-45"))
+        self.assertContains(resp, "O CPF deve conter exatamente 11 números.", status_code=400)
+
 
 class LoginAlunoViewTest(TestCase):
     """Fluxo de login (usuario/pages.py::login_view)."""
@@ -174,6 +186,20 @@ class CadastroVeiculoViewTest(TestCase):
 
     def test_placa_vazia_mostra_erro(self):
         resp = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "", "modelo_ano": ""})
+        self.assertContains(resp, "Informe a placa do veículo.", status_code=400)
+        self.assertEqual(Veiculo.objects.count(), 0)
+
+    def test_placa_remove_caracteres_especiais(self):
+        self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "AB#C-12!34", "modelo_ano": ""})
+        self.assertTrue(Veiculo.objects.filter(placa="ABC1234").exists())
+
+    def test_placa_somente_espacos_mostra_erro(self):
+        resp = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "   ", "modelo_ano": ""})
+        self.assertContains(resp, "Informe a placa do veículo.", status_code=400)
+        self.assertEqual(Veiculo.objects.count(), 0)
+
+    def test_placa_somente_simbolos_mostra_erro(self):
+        resp = self.client.post(self.url, {"tipo_veiculo": "automovel", "placa": "!!!---", "modelo_ano": ""})
         self.assertContains(resp, "Informe a placa do veículo.", status_code=400)
         self.assertEqual(Veiculo.objects.count(), 0)
 

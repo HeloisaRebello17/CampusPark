@@ -1,3 +1,4 @@
+import re
 from functools import wraps
 
 from django.db import IntegrityError, transaction
@@ -5,6 +6,7 @@ from django.shortcuts import render, redirect
 
 from apps.campuspark_acesso.models import RegistroAcesso, StatusAcesso
 from apps.campuspark_veiculo.models import TipoVeiculo, Veiculo
+from core.utils import somente_numeros
 from .models import Aluno, Operador
 from .services import UsuarioService
 
@@ -72,7 +74,7 @@ def cadastro_view(request):
         valores = {
             "nome": request.POST.get("nome", "").strip(),
             "matricula": request.POST.get("matricula", "").strip(),
-            "cpf": request.POST.get("cpf", "").strip(),
+            "cpf": somente_numeros(request.POST.get("cpf", "")),
             "email": request.POST.get("email", "").strip(),
         }
         senha = request.POST.get("senha", "")
@@ -165,7 +167,7 @@ def cadastro_veiculo_view(request):
     if request.method == "POST":
         valores = {
             "tipo_veiculo": request.POST.get("tipo_veiculo", "automovel"),
-            "placa": request.POST.get("placa", "").strip().upper().replace("-", "").replace(" ", ""),
+            "placa": re.sub(r"[^A-Za-z0-9]", "", request.POST.get("placa", "")).upper(),
             "modelo_ano": request.POST.get("modelo_ano", "").strip(),
         }
         seguro_ativo = request.POST.get("seguro_ativo") == "on"
