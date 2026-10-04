@@ -1,4 +1,4 @@
-// ui.js — pequenas interações visuais das telas (sem chamadas a backend)
+// ui.js: pequenas interações visuais das telas (sem chamadas a backend)
 
 document.addEventListener("DOMContentLoaded", () => {
   // Seletor de tipo de veículo (Automóvel / Motocicleta)
@@ -38,6 +38,23 @@ document.addEventListener("DOMContentLoaded", () => {
         preview.style.backgroundImage = `url(${URL.createObjectURL(file)})`;
         preview.classList.add("has-photo");
       }
+    });
+  });
+
+  // Força maiúsculas em campos marcados (ex.: placa do veículo)
+  document.querySelectorAll("[data-uppercase]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const inicio = input.selectionStart;
+      const fim = input.selectionEnd;
+      input.value = input.value.toUpperCase();
+      input.setSelectionRange(inicio, fim);
+    });
+  });
+
+  // Aceita só dígitos em campos marcados (ex.: RA no login)
+  document.querySelectorAll("[data-digits-only]").forEach((input) => {
+    input.addEventListener("input", () => {
+      input.value = input.value.replace(/\D/g, "");
     });
   });
 

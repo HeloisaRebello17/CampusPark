@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}Entrar · CampusPark{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/auth.css' %}" />{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/cadastroAluno.css' %}" />{% endblock %}
 
 {% block content %}
 <div class="auth-page">
@@ -25,7 +25,7 @@
       {% csrf_token %}
       <div class="field">
         <label class="field-label" for="identificador">RA (Registro Acadêmico)</label>
-        <input class="field-input" type="text" id="identificador" name="identificador" placeholder="Ex: 2201934" />
+        <input class="field-input" type="text" id="identificador" name="identificador" placeholder="Ex: 2201934" maxlength="7" inputmode="numeric" data-digits-only />
       </div>
 
       <div class="field">

@@ -1,6 +1,6 @@
 from functools import wraps
 
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.shortcuts import render, redirect
 
 from apps.campuspark_acesso.models import RegistroAcesso, StatusAcesso
@@ -105,13 +105,14 @@ def cadastro_view(request):
 
         if not erros:
             try:
-                aluno = UsuarioService.cadastrar_aluno({
-                    "matricula": valores["matricula"],
-                    "cpf": valores["cpf"],
-                    "nome_completo": valores["nome"],
-                    "email_institucional": valores["email"],
-                    "senha": senha,
-                })
+                with transaction.atomic():
+                    aluno = UsuarioService.cadastrar_aluno({
+                        "matricula": valores["matricula"],
+                        "cpf": valores["cpf"],
+                        "nome_completo": valores["nome"],
+                        "email_institucional": valores["email"],
+                        "senha": senha,
+                    })
             except IntegrityError:
                 erros.append("Não foi possível concluir o cadastro. Verifique os dados informados.")
             else:
@@ -182,15 +183,16 @@ def cadastro_veiculo_view(request):
 
         if not erros:
             try:
-                Veiculo.objects.create(
-                    placa=valores["placa"],
-                    aluno=request.aluno,
-                    tipo=tipo_map.get(valores["tipo_veiculo"], TipoVeiculo.CARRO),
-                    modelo=valores["modelo_ano"],
-                    seguro_ativo=seguro_ativo,
-                    renavam=None,
-                    tag_rfid=None,
-                )
+                with transaction.atomic():
+                    Veiculo.objects.create(
+                        placa=valores["placa"],
+                        aluno=request.aluno,
+                        tipo=tipo_map.get(valores["tipo_veiculo"], TipoVeiculo.CARRO),
+                        modelo=valores["modelo_ano"],
+                        seguro_ativo=seguro_ativo,
+                        renavam=None,
+                        tag_rfid=None,
+                    )
             except IntegrityError:
                 erros.append("Já existe um veículo cadastrado com essa placa.")
             else:
