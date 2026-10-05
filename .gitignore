@@ -26,3 +26,7 @@ Thumbs.db
 
 #Onnx
 *.onnx
+
+build/
+dist/
+*.spec
