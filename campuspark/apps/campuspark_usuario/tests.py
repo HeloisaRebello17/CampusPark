@@ -1,6 +1,10 @@
+from unittest.mock import patch
+
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
+from apps.campuspark_biometria.services import RostoNaoDetectado
 from apps.campuspark_veiculo.models import Veiculo
 from .models import Aluno
 from .services import UsuarioService
@@ -35,6 +39,17 @@ class CadastroAlunoViewTest(TestCase):
 
     def setUp(self):
         self.url = reverse("cadastro")
+        # O motor facial (OpenCV/ONNX) nao roda nos testes: BiometriaService.cadastrar e simulado.
+        patcher = patch("apps.campuspark_usuario.pages.BiometriaService.cadastrar", return_value=5)
+        self.mock_cadastrar = patcher.start()
+        self.addCleanup(patcher.stop)
+
+    @staticmethod
+    def fotos(qtd=5):
+        return [
+            SimpleUploadedFile(f"rosto_{i}.jpg", b"fake-jpeg", content_type="image/jpeg")
+            for i in range(qtd)
+        ]
 
     def dados_validos(self, **overrides):
         dados = {
@@ -43,6 +58,7 @@ class CadastroAlunoViewTest(TestCase):
             "cpf": "12345678901",
             "email": "maria@catolicasc.org",
             "senha": "senha123",
+            "fotos_rosto": self.fotos(),
         }
         dados.update(overrides)
         return dados
@@ -94,6 +110,43 @@ class CadastroAlunoViewTest(TestCase):
         resp = self.client.post(self.url, self.dados_validos(cpf="123.456.789-01"))
         self.assertRedirects(resp, reverse("veiculo-cadastro"))
         self.assertTrue(Aluno.objects.filter(cpf="12345678901").exists())
+
+    def test_cadastro_envia_fotos_ao_servico_facial(self):
+        self.client.post(self.url, self.dados_validos())
+        self.mock_cadastrar.assert_called_once()
+        aluno, fotos = self.mock_cadastrar.call_args.args
+        self.assertEqual(aluno.matricula, "2201934")
+        self.assertEqual(len(fotos), 5)
+        self.assertEqual(self.mock_cadastrar.call_args.kwargs["minimo_amostras"], 3)
+
+    def test_cadastro_sem_fotos_do_rosto_e_recusado(self):
+        resp = self.client.post(self.url, self.dados_validos(fotos_rosto=[]))
+        self.assertContains(resp, "Tire as fotos do seu rosto para concluir o cadastro.", status_code=400)
+        self.assertFalse(Aluno.objects.exists())
+        self.mock_cadastrar.assert_not_called()
+
+    def test_cadastro_com_poucas_fotos_e_recusado(self):
+        resp = self.client.post(self.url, self.dados_validos(fotos_rosto=self.fotos(2)))
+        self.assertContains(resp, "Tire as fotos do seu rosto para concluir o cadastro.", status_code=400)
+        self.assertFalse(Aluno.objects.exists())
+
+    def test_cadastro_com_fotos_demais_e_recusado(self):
+        resp = self.client.post(self.url, self.dados_validos(fotos_rosto=self.fotos(11)))
+        self.assertContains(resp, "Envie no máximo 10 fotos do rosto.", status_code=400)
+        self.assertFalse(Aluno.objects.exists())
+
+    def test_rosto_nao_detectado_desfaz_o_cadastro_do_aluno(self):
+        self.mock_cadastrar.side_effect = RostoNaoDetectado("sem rosto")
+        resp = self.client.post(self.url, self.dados_validos())
+        self.assertContains(resp, "Não conseguimos detectar seu rosto", status_code=400)
+        self.assertFalse(Aluno.objects.exists())
+        self.assertNotIn("aluno_id", self.client.session)
+
+    def test_modelos_faciais_ausentes_mostram_erro_e_nao_criam_aluno(self):
+        self.mock_cadastrar.side_effect = FileNotFoundError("modelos")
+        resp = self.client.post(self.url, self.dados_validos())
+        self.assertContains(resp, "O reconhecimento facial está indisponível", status_code=400)
+        self.assertFalse(Aluno.objects.exists())
 
     def test_cpf_com_letras_e_simbolos_remove_antes_de_validar(self):
         resp = self.client.post(self.url, self.dados_validos(cpf="abc.123-45"))
