@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import RegistroAcesso, ConfiguracaoEstacionamento
+from .models import RegistroAcesso, ConfiguracaoEstacionamento, AberturaCancela
 
 @admin.register(RegistroAcesso)
 class RegistroAcessoAdmin(admin.ModelAdmin):
@@ -10,3 +10,9 @@ class RegistroAcessoAdmin(admin.ModelAdmin):
 @admin.register(ConfiguracaoEstacionamento)
 class ConfiguracaoEstacionamentoAdmin(admin.ModelAdmin):
     list_display = ("vagas_carro", "vagas_moto", "atualizado_em")
+
+
+@admin.register(AberturaCancela)
+class AberturaCancelaAdmin(admin.ModelAdmin):
+    list_display = ("data_hora", "tipo", "sentido", "placa_exibicao", "operador", "motivo")
+    list_filter = ("tipo", "sentido")

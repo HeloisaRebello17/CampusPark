@@ -49,3 +49,46 @@ class ConfiguracaoEstacionamento(models.Model):
     def obter(cls) -> "ConfiguracaoEstacionamento":
         config, _ = cls.objects.get_or_create(pk=1)
         return config
+
+
+class TipoAbertura(models.TextChoices):
+    AUTOMATICA = "AUTOMATICA", "Automática"
+    MANUAL = "MANUAL", "Manual"
+
+
+class SentidoAbertura(models.TextChoices):
+    ENTRADA = "ENTRADA", "Entrada"
+    SAIDA = "SAIDA", "Saída"
+
+
+class AberturaCancela(models.Model):
+    """Registro de cada vez que a cancela foi aberta: automática (TAG + rosto) ou manual (operador)."""
+
+    tipo = models.CharField(max_length=10, choices=TipoAbertura.choices)
+    sentido = models.CharField(max_length=7, choices=SentidoAbertura.choices)
+    veiculo = models.ForeignKey(
+        Veiculo, on_delete=models.SET_NULL, null=True, blank=True, related_name="aberturas_cancela"
+    )
+    registro = models.ForeignKey(
+        RegistroAcesso, on_delete=models.SET_NULL, null=True, blank=True, related_name="aberturas"
+    )
+    operador = models.ForeignKey(
+        Operador, on_delete=models.SET_NULL, null=True, blank=True, related_name="aberturas_cancela"
+    )
+    placa_informada = models.CharField(max_length=7, blank=True)
+    motivo = models.CharField(max_length=255, blank=True)
+    data_hora = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-data_hora"]
+        verbose_name = "Abertura da cancela"
+        verbose_name_plural = "Aberturas da cancela"
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} - {self.get_sentido_display()} - {self.data_hora:%d/%m/%Y %H:%M}"
+
+    @property
+    def placa_exibicao(self) -> str:
+        if self.veiculo_id:
+            return self.veiculo.placa
+        return self.placa_informada or "-"

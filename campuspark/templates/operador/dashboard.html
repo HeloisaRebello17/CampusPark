@@ -19,6 +19,11 @@
     </div>
 </section>
 
+<section class="painel">
+    <h2>Cancela</h2>
+    <p><a href="{% url 'cancela' %}">Abrir o controle da cancela (liberação automática e manual)</a></p>
+</section>
+
 {% if operador.is_administrador %}
 <section class="painel">
     <h2>Capacidade do Estacionamento</h2>
