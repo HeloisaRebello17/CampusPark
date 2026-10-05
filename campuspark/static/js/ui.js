@@ -1,4 +1,4 @@
-// ui.js — pequenas interações visuais das telas (sem chamadas a backend)
+// ui.js: pequenas interações visuais das telas (sem chamadas a backend)
 
 document.addEventListener("DOMContentLoaded", () => {
   // Seletor de tipo de veículo (Automóvel / Motocicleta)
@@ -39,6 +39,37 @@ document.addEventListener("DOMContentLoaded", () => {
         preview.classList.add("has-photo");
       }
     });
+  });
+
+  // Placa do veículo: maiúsculas, só letras e números (sem espaço/traço/símbolo)
+  document.querySelectorAll("[data-placa-mask]").forEach((input) => {
+    input.addEventListener("input", () => {
+      input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    });
+  });
+
+  // Aceita só dígitos em campos marcados (ex.: RA no login)
+  document.querySelectorAll("[data-digits-only]").forEach((input) => {
+    input.addEventListener("input", () => {
+      input.value = input.value.replace(/\D/g, "");
+    });
+  });
+
+  // Máscara de CPF: 000.000.000-00, formatada enquanto digita
+  document.querySelectorAll("[data-cpf-mask]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const digitos = input.value.replace(/\D/g, "").slice(0, 11);
+      let formatado = digitos;
+      if (digitos.length > 9) {
+        formatado = `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-${digitos.slice(9)}`;
+      } else if (digitos.length > 6) {
+        formatado = `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6)}`;
+      } else if (digitos.length > 3) {
+        formatado = `${digitos.slice(0, 3)}.${digitos.slice(3)}`;
+      }
+      input.value = formatado;
+    });
+    input.dispatchEvent(new Event("input"));
   });
 
   // Menu do sidebar em telas pequenas

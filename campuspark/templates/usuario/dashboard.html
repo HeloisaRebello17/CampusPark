@@ -4,7 +4,7 @@
 {% block title %}Dashboard · CampusPark{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
-<link rel="stylesheet" href="{% static 'css/aluno_dashboard.css' %}" />
+<link rel="stylesheet" href="{% static 'css/dashboardAluno.css' %}" />
 {% endblock %}
 
 {% block content %}
@@ -21,7 +21,6 @@
           <h1 class="page-title">Bem-vindo, {{ primeiro_nome }}.</h1>
         </div>
         <div class="page-header-actions">
-          <button class="btn btn-outline" type="button" disabled title="Disponível em breve">Relatório Mensal</button>
           <a class="btn btn-primary" href="{% url 'veiculo-cadastro' %}">Registrar Novo Veículo</a>
         </div>
       </div>
@@ -122,7 +121,7 @@
     </div>
 
     <div class="page-footer">
-      <span>© 2024 Portal de Estacionamento Institucional · Todos os direitos reservados.</span>
+      <span>© 2026 Portal de Estacionamento Institucional · Todos os direitos reservados.</span>
       <span><a href="#">Termos</a><a href="#">Privacidade</a></span>
     </div>
   </div>
