@@ -235,3 +235,95 @@
 .auth-footer-links span {
   margin: 0 6px;
 }
+
+
+/* Captura facial no cadastro */
+
+.face-capture {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.face-capture [hidden] {
+  display: none !important;
+}
+
+.face-capture-hint {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.face-capture-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-blue-tint);
+  border: 1px dashed var(--color-blue-tint-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-faint);
+}
+
+.face-capture-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* espelhado, como um espelho */
+}
+
+.face-capture-stage.is-shooting {
+  border-style: solid;
+  border-color: var(--color-primary);
+}
+
+.face-capture-thumbs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.face-capture-thumbs img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.face-capture-status {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.face-capture-status.is-ok {
+  color: var(--color-success-text);
+}
+
+.face-capture-status.is-erro {
+  color: var(--color-primary);
+}
+
+.face-capture-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.face-capture-actions .btn {
+  flex: 1;
+  padding: 11px 16px;
+  font-size: 0.88rem;
+}
+
+.face-capture-upload {
+  font-size: 0.75rem;
+  color: var(--color-text-faint);
+  text-decoration: underline;
+  cursor: pointer;
+}

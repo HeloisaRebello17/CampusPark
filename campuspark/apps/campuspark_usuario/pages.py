@@ -1,9 +1,15 @@
 from functools import wraps
 
+<<<<<<< Updated upstream
 from django.db import IntegrityError
+=======
+from django.conf import settings
+from django.db import IntegrityError, transaction
+>>>>>>> Stashed changes
 from django.shortcuts import render, redirect
 
 from apps.campuspark_acesso.models import RegistroAcesso, StatusAcesso
+from apps.campuspark_biometria.services import BiometriaService, RostoNaoDetectado
 from apps.campuspark_veiculo.models import TipoVeiculo, Veiculo
 from .models import Aluno, Operador
 from .services import UsuarioService
@@ -11,6 +17,18 @@ from .services import UsuarioService
 SESSION_ALUNO_ID = "aluno_id"
 SESSION_OPERADOR_ID = "operador_id"
 
+<<<<<<< Updated upstream
+=======
+PLACA_REGEX = re.compile(r"^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$")
+
+# Fotos do rosto tiradas no cadastro (reconhecimento facial na saida).
+# A tela captura FOTOS_ROSTO_ALVO; o servidor exige que pelo menos FOTOS_ROSTO_MINIMO
+# tenham rosto detectavel, senao o cadastro inteiro e desfeito.
+FOTOS_ROSTO_ALVO = 5
+FOTOS_ROSTO_MINIMO = 3
+FOTOS_ROSTO_MAXIMO = 10
+
+>>>>>>> Stashed changes
 
 def aluno_required(view_func):
     @wraps(view_func)
@@ -67,6 +85,18 @@ def login_view(request):
     return render(request, "usuario/login.html")
 
 
+def _contexto_cadastro(**extra):
+    """Contexto base da tela de cadastro (parametros da captura facial)."""
+    contexto = {
+        "fotos_alvo": FOTOS_ROSTO_ALVO,
+        # Upload de arquivo no lugar da camera so em desenvolvimento (DEBUG):
+        # em producao a foto precisa vir da camera, nao de uma imagem qualquer.
+        "permitir_upload_foto": settings.DEBUG,
+    }
+    contexto.update(extra)
+    return contexto
+
+
 def cadastro_view(request):
     if request.method == "POST":
         valores = {
@@ -76,6 +106,7 @@ def cadastro_view(request):
             "email": request.POST.get("email", "").strip(),
         }
         senha = request.POST.get("senha", "")
+        fotos_rosto = request.FILES.getlist("fotos_rosto")
 
         erros = []
         if not valores["nome"]:
@@ -103,8 +134,14 @@ def cadastro_view(request):
         if len(senha) < 6:
             erros.append("A senha deve ter pelo menos 6 caracteres.")
 
+        if len(fotos_rosto) < FOTOS_ROSTO_MINIMO:
+            erros.append("Tire as fotos do seu rosto para concluir o cadastro.")
+        elif len(fotos_rosto) > FOTOS_ROSTO_MAXIMO:
+            erros.append(f"Envie no máximo {FOTOS_ROSTO_MAXIMO} fotos do rosto.")
+
         if not erros:
             try:
+<<<<<<< Updated upstream
                 aluno = UsuarioService.cadastrar_aluno({
                     "matricula": valores["matricula"],
                     "cpf": valores["cpf"],
@@ -112,16 +149,42 @@ def cadastro_view(request):
                     "email_institucional": valores["email"],
                     "senha": senha,
                 })
+=======
+                # Aluno e biometria no mesmo bloco: se o rosto nao for detectado,
+                # o aluno tambem nao e criado.
+                with transaction.atomic():
+                    aluno = UsuarioService.cadastrar_aluno({
+                        "matricula": valores["matricula"],
+                        "cpf": valores["cpf"],
+                        "nome_completo": valores["nome"],
+                        "email_institucional": valores["email"],
+                        "senha": senha,
+                    })
+                    BiometriaService.cadastrar(aluno, fotos_rosto, minimo_amostras=FOTOS_ROSTO_MINIMO)
+>>>>>>> Stashed changes
             except IntegrityError:
                 erros.append("Não foi possível concluir o cadastro. Verifique os dados informados.")
+            except RostoNaoDetectado:
+                erros.append(
+                    "Não conseguimos detectar seu rosto nas fotos. Fique de frente para a câmera, "
+                    "com boa iluminação e sem boné ou óculos escuros, e tire as fotos novamente."
+                )
+            except FileNotFoundError:
+                erros.append(
+                    "O reconhecimento facial está indisponível no momento. "
+                    "Procure o suporte do estacionamento."
+                )
             else:
                 request.session.flush()
                 request.session[SESSION_ALUNO_ID] = aluno.id
                 return redirect("veiculo-cadastro")
 
-        return render(request, "usuario/cadastro.html", {"erros": erros, "valores": valores}, status=400)
+        return render(
+            request, "usuario/cadastro.html",
+            _contexto_cadastro(erros=erros, valores=valores), status=400,
+        )
 
-    return render(request, "usuario/cadastro.html")
+    return render(request, "usuario/cadastro.html", _contexto_cadastro())
 
 
 def logout_view(request):

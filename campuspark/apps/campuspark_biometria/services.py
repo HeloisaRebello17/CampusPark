@@ -37,10 +37,14 @@ class BiometriaService:
         return frame
 
     @classmethod
-    def cadastrar(cls, aluno, arquivos_imagem: list) -> int:
+    def cadastrar(cls, aluno, arquivos_imagem: list, minimo_amostras: int = 1) -> int:
         """
         Recebe uma lista de arquivos de imagem (fotos do aluno) e salva um
         embedding para cada rosto detectado. Retorna quantas amostras foram salvas.
+
+        Se menos de 'minimo_amostras' fotos tiverem rosto detectavel, levanta
+        RostoNaoDetectado ANTES de recarregar o cache. Quem chama dentro de
+        transaction.atomic() desfaz as amostras ja gravadas ao deixar a excecao subir.
         """
         from .models import Biometria
 
@@ -66,6 +70,12 @@ class BiometriaService:
 
         if salvos == 0:
             raise RostoNaoDetectado("Nenhum rosto foi detectado nas imagens enviadas.")
+
+        if salvos < minimo_amostras:
+            raise RostoNaoDetectado(
+                f"Foi possivel detectar o rosto em apenas {salvos} de {len(arquivos_imagem)} foto(s); "
+                f"sao necessarias pelo menos {minimo_amostras}."
+            )
 
         # o aluno acabou de ganhar embeddings novos -- o cache em memoria precisa
         # ser atualizado, senao o reconhecimento so vai "ver" esse aluno depois
