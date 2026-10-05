@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}Criar conta · CampusPark{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/auth.css' %}" />{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/cadastroAluno.css' %}" />{% endblock %}
 
 {% block content %}
 <div class="auth-page">
@@ -36,12 +36,12 @@
 
       <div class="field">
         <label class="field-label" for="matricula">Matrícula (RA)</label>
-        <input class="field-input" type="text" id="matricula" name="matricula" placeholder="Digite seu número de registro" maxlength="7" value="{{ valores.matricula|default:'' }}" />
+        <input class="field-input" type="text" id="matricula" name="matricula" placeholder="Digite seu número de registro" maxlength="7" value="{{ valores.matricula|default:'' }}" inputmode="numeric" data-digits-only />
       </div>
 
       <div class="field">
         <label class="field-label" for="cpf">CPF</label>
-        <input class="field-input" type="text" id="cpf" name="cpf" placeholder="Somente números" maxlength="11" value="{{ valores.cpf|default:'' }}" />
+        <input class="field-input" type="text" id="cpf" name="cpf" placeholder="000.000.000-00" maxlength="14" value="{{ valores.cpf|default:'' }}" data-cpf-mask inputmode="numeric" />
       </div>
 
       <div class="field">
@@ -65,7 +65,7 @@
     <div class="auth-footer-links">
       <a href="#">Privacy Policy</a><span>·</span><a href="#">Terms of Service</a><span>·</span><a href="#">Support</a>
     </div>
-    <div>© 2024 Institutional Registry. All rights reserved.</div>
+    <div>© 2026 Institutional Registry. All rights reserved.</div>
   </div>
 </div>
 {% endblock %}

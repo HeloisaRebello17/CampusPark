@@ -44,11 +44,11 @@
         <div class="field-row">
           <div class="field">
             <label class="field-label" for="placa">Placa do Veículo</label>
-            <input class="field-input" type="text" id="placa" name="placa" placeholder="ABC-1234" maxlength="8" value="{{ valores.placa|default:'' }}" />
+            <input class="field-input" type="text" id="placa" name="placa" placeholder="ABC1234" maxlength="7" value="{{ valores.placa|default:'' }}" data-placa-mask autocapitalize="characters" />
           </div>
           <div class="field">
             <label class="field-label" for="modelo_ano">Modelo e Ano</label>
-            <input class="field-input" type="text" id="modelo_ano" name="modelo_ano" placeholder="Ex: Honda Civic 2022" value="{{ valores.modelo_ano|default:'' }}" />
+            <input class="field-input" type="text" id="modelo_ano" name="modelo_ano" placeholder="Ex: Honda Civic 2022" value="{{ valores.modelo_ano|default:'' }}" required />
           </div>
         </div>
 
@@ -74,7 +74,7 @@
     </div>
 
     <div class="page-footer">
-      <span>© 2024 Portal de Estacionamento Institucional · Todos os direitos reservados.</span>
+      <span>© 2026 Portal de Estacionamento Institucional · Todos os direitos reservados.</span>
       <span><a href="#">Termos</a><a href="#">Privacidade</a></span>
     </div>
   </div>

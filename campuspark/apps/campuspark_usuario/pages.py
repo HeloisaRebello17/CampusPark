@@ -1,15 +1,19 @@
+import re
 from functools import wraps
 
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.shortcuts import render, redirect
 
 from apps.campuspark_acesso.models import RegistroAcesso, StatusAcesso
 from apps.campuspark_veiculo.models import TipoVeiculo, Veiculo
+from core.utils import somente_numeros
 from .models import Aluno, Operador
 from .services import UsuarioService
 
 SESSION_ALUNO_ID = "aluno_id"
 SESSION_OPERADOR_ID = "operador_id"
+
+PLACA_REGEX = re.compile(r"^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$")
 
 
 def aluno_required(view_func):
@@ -72,7 +76,7 @@ def cadastro_view(request):
         valores = {
             "nome": request.POST.get("nome", "").strip(),
             "matricula": request.POST.get("matricula", "").strip(),
-            "cpf": request.POST.get("cpf", "").strip(),
+            "cpf": somente_numeros(request.POST.get("cpf", "")),
             "email": request.POST.get("email", "").strip(),
         }
         senha = request.POST.get("senha", "")
@@ -105,13 +109,14 @@ def cadastro_view(request):
 
         if not erros:
             try:
-                aluno = UsuarioService.cadastrar_aluno({
-                    "matricula": valores["matricula"],
-                    "cpf": valores["cpf"],
-                    "nome_completo": valores["nome"],
-                    "email_institucional": valores["email"],
-                    "senha": senha,
-                })
+                with transaction.atomic():
+                    aluno = UsuarioService.cadastrar_aluno({
+                        "matricula": valores["matricula"],
+                        "cpf": valores["cpf"],
+                        "nome_completo": valores["nome"],
+                        "email_institucional": valores["email"],
+                        "senha": senha,
+                    })
             except IntegrityError:
                 erros.append("Não foi possível concluir o cadastro. Verifique os dados informados.")
             else:
@@ -164,7 +169,7 @@ def cadastro_veiculo_view(request):
     if request.method == "POST":
         valores = {
             "tipo_veiculo": request.POST.get("tipo_veiculo", "automovel"),
-            "placa": request.POST.get("placa", "").strip().upper().replace("-", "").replace(" ", ""),
+            "placa": re.sub(r"[^A-Za-z0-9]", "", request.POST.get("placa", "")).upper(),
             "modelo_ano": request.POST.get("modelo_ano", "").strip(),
         }
         seguro_ativo = request.POST.get("seguro_ativo") == "on"
@@ -172,8 +177,11 @@ def cadastro_veiculo_view(request):
         erros = []
         if not valores["placa"]:
             erros.append("Informe a placa do veículo.")
-        elif len(valores["placa"]) > 7:
-            erros.append("Placa inválida. Use até 7 caracteres (ex: ABC1D23).")
+        elif not PLACA_REGEX.match(valores["placa"]):
+            erros.append("Placa inválida. Use o formato Mercosul: 3 letras e 4 números, ex: ABC1D23.")
+
+        if not valores["modelo_ano"]:
+            erros.append("Informe o modelo e ano do veículo.")
 
         tipo_map = {
             "automovel": TipoVeiculo.CARRO,
@@ -182,15 +190,16 @@ def cadastro_veiculo_view(request):
 
         if not erros:
             try:
-                Veiculo.objects.create(
-                    placa=valores["placa"],
-                    aluno=request.aluno,
-                    tipo=tipo_map.get(valores["tipo_veiculo"], TipoVeiculo.CARRO),
-                    modelo=valores["modelo_ano"],
-                    seguro_ativo=seguro_ativo,
-                    renavam=None,
-                    tag_rfid=None,
-                )
+                with transaction.atomic():
+                    Veiculo.objects.create(
+                        placa=valores["placa"],
+                        aluno=request.aluno,
+                        tipo=tipo_map.get(valores["tipo_veiculo"], TipoVeiculo.CARRO),
+                        modelo=valores["modelo_ano"],
+                        seguro_ativo=seguro_ativo,
+                        renavam=None,
+                        tag_rfid=None,
+                    )
             except IntegrityError:
                 erros.append("Já existe um veículo cadastrado com essa placa.")
             else:
