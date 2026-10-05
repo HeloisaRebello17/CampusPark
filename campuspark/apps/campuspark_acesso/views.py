@@ -9,9 +9,12 @@ from rest_framework import status
 
 from apps.campuspark_veiculo.models import TipoVeiculo
 from core.permissions import operador_login_required, administrador_required
-from .services import AcessoService, AcessoNegado
+from .services import AcessoService, AcessoNegado, anunciar_rosto, anunciar_acesso
 from .serializers import RegistroAcessoSerializer
-from .models import RegistroAcesso, StatusAcesso, ConfiguracaoEstacionamento
+from .models import (
+    RegistroAcesso, StatusAcesso, ConfiguracaoEstacionamento,
+    AberturaCancela, SentidoAbertura,
+)
 
 
 @method_decorator(operador_login_required, name="dispatch")
@@ -63,6 +66,91 @@ class AtualizarVagasView(View):
         config.save(update_fields=["vagas_carro", "vagas_moto"])
         messages.success(request, "Capacidade do estacionamento atualizada com sucesso.")
         return redirect("dashboard")
+
+
+@method_decorator(operador_login_required, name="dispatch")
+class CancelaView(View):
+    """Controle da cancela: simulação da liberação automática (TAG + rosto), liberação manual
+    pelo operador e histórico das últimas aberturas."""
+
+    template_name = "operador/cancela.html"
+
+    def _contexto(self, request, **extra):
+        aberturas = (
+            AberturaCancela.objects
+            .select_related("veiculo", "operador")
+            .order_by("-data_hora")[:30]
+        )
+        context = {
+            "operador": request.operador,
+            "secao": "cancela",
+            "aberturas": aberturas,
+        }
+        context.update(extra)
+        return context
+
+    def get(self, request):
+        return render(request, self.template_name, self._contexto(request))
+
+    def post(self, request):
+        acao = request.POST.get("acao")
+        if acao == "simular":
+            return self._simular(request)
+        if acao == "manual":
+            return self._manual(request)
+        return render(request, self.template_name, self._contexto(request))
+
+    def _simular(self, request):
+        tag = request.POST.get("tag_rfid", "").strip()
+        matricula = request.POST.get("matricula", "").strip()
+        sentido = request.POST.get("sentido", SentidoAbertura.ENTRADA)
+        extra = {"tag_digitada": tag, "matricula_digitada": matricula}
+
+        aluno = None
+        if sentido == SentidoAbertura.ENTRADA and matricula:
+            aluno = Aluno.objects.filter(matricula=matricula).first()
+            if aluno is None:
+                extra["erro_auto"] = "Aluno com essa matrícula não foi encontrado."
+                return render(request, self.template_name, self._contexto(request, **extra))
+            anunciar_rosto(aluno)
+
+        try:
+            if sentido == SentidoAbertura.SAIDA:
+                registro = AcessoService.registrar_saida(tag)
+            else:
+                sentido = SentidoAbertura.ENTRADA
+                registro = AcessoService.validar_entrada(tag, aluno_reconhecido=aluno)
+        except AcessoNegado as e:
+            print(f"[ACESSO NEGADO] {e}")
+            extra["erro_auto"] = str(e)
+            return render(request, self.template_name, self._contexto(request, **extra))
+
+        anunciar_acesso(registro, sentido)
+        extra["resultado"] = {
+            "sentido": "Entrada" if sentido == SentidoAbertura.ENTRADA else "Saída",
+            "placa": registro.veiculo.placa,
+            "aluno": registro.veiculo.aluno.nome_completo,
+            "matricula": registro.veiculo.aluno.matricula,
+            "entrada": registro.data_entrada,
+            "saida": registro.data_saida,
+            "permanencia": str(registro.permanencia).split(".")[0],
+            "rosto_verificado": aluno is not None,
+        }
+        return render(request, self.template_name, self._contexto(request, **extra))
+
+    def _manual(self, request):
+        try:
+            AcessoService.liberar_manual(
+                request.operador,
+                request.POST.get("sentido", ""),
+                request.POST.get("motivo", ""),
+                request.POST.get("placa", ""),
+            )
+        except AcessoNegado as e:
+            extra = {"erro_manual": str(e)}
+        else:
+            extra = {"sucesso_manual": "Cancela aberta manualmente. A abertura foi registrada no histórico."}
+        return render(request, self.template_name, self._contexto(request, **extra))
 
 
 class EntradaView(APIView):

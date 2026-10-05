@@ -1,0 +1,116 @@
+{% extends "operador/_painel.html" %}
+
+{% block title %}Cancela — CampusPark{% endblock %}
+
+{% block painel_conteudo %}
+<h1 class="painel-titulo">Controle da Cancela<span class="painel-titulo-linha"></span></h1>
+<p class="painel-subtitulo">Liberação automática (simulação) e liberação manual</p>
+
+<section class="painel">
+    <h2>Liberação automática (simulação)</h2>
+    <p>Simula a leitura da TAG RFID e do rosto do aluno. Se tudo estiver válido, a cancela abre e o acesso é registrado.</p>
+    <form method="post" class="form-vagas">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="simular">
+        <div>
+            <label for="sentido_auto">Sentido</label>
+            <select id="sentido_auto" name="sentido">
+                <option value="ENTRADA">Entrada</option>
+                <option value="SAIDA">Saída</option>
+            </select>
+        </div>
+        <div>
+            <label for="tag_rfid">TAG RFID do veículo</label>
+            <input type="text" id="tag_rfid" name="tag_rfid" maxlength="30" value="{{ tag_digitada|default:'' }}" required>
+        </div>
+        <div>
+            <label for="matricula">Matrícula do aluno (rosto reconhecido, só na entrada)</label>
+            <input type="text" id="matricula" name="matricula" maxlength="7" value="{{ matricula_digitada|default:'' }}">
+        </div>
+        <button type="submit">Simular leitura</button>
+    </form>
+
+    {% if resultado %}
+    <div style="margin-top:16px;padding:16px;border:2px solid #2e7d32;border-radius:8px;background:#e8f5e9;color:#1b5e20;">
+        <h3 style="margin:0 0 8px 0;">ACESSO AUTORIZADO — {{ resultado.sentido }}</h3>
+        <p style="margin:2px 0;"><strong>Aluno:</strong> {{ resultado.aluno }} (matrícula {{ resultado.matricula }})</p>
+        <p style="margin:2px 0;"><strong>Placa:</strong> {{ resultado.placa }}</p>
+        <p style="margin:2px 0;"><strong>Data de entrada:</strong> {{ resultado.entrada|date:"d/m/Y H:i:s" }}</p>
+        <p style="margin:2px 0;"><strong>Data de saída:</strong> {{ resultado.saida|date:"d/m/Y H:i:s"|default:"—" }}</p>
+        <p style="margin:2px 0;"><strong>Permanência:</strong> {{ resultado.permanencia }}</p>
+        <p style="margin:2px 0;"><strong>Rosto verificado:</strong> {% if resultado.rosto_verificado %}sim{% else %}não (apenas TAG){% endif %}</p>
+    </div>
+    {% endif %}
+
+    {% if erro_auto %}
+    <div style="margin-top:16px;padding:16px;border:2px solid #c62828;border-radius:8px;background:#ffebee;color:#b71c1c;">
+        <h3 style="margin:0 0 8px 0;">ACESSO NEGADO</h3>
+        <p style="margin:0;">{{ erro_auto }}</p>
+    </div>
+    {% endif %}
+</section>
+
+<section class="painel">
+    <h2>Liberação manual</h2>
+    <p>Use quando a TAG ou o rosto não puderem ser lidos. A abertura fica registrada com o seu nome e o motivo.</p>
+    <form method="post" class="form-vagas">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="manual">
+        <div>
+            <label for="sentido_manual">Sentido</label>
+            <select id="sentido_manual" name="sentido">
+                <option value="ENTRADA">Entrada</option>
+                <option value="SAIDA">Saída</option>
+            </select>
+        </div>
+        <div>
+            <label for="placa">Placa (opcional)</label>
+            <input type="text" id="placa" name="placa" maxlength="7">
+        </div>
+        <div>
+            <label for="motivo">Motivo (obrigatório)</label>
+            <input type="text" id="motivo" name="motivo" maxlength="255" required>
+        </div>
+        <button type="submit">Abrir cancela manualmente</button>
+    </form>
+
+    {% if sucesso_manual %}
+    <p style="margin-top:12px;padding:12px;border:1px solid #2e7d32;border-radius:6px;background:#e8f5e9;color:#1b5e20;">{{ sucesso_manual }}</p>
+    {% endif %}
+    {% if erro_manual %}
+    <p style="margin-top:12px;padding:12px;border:1px solid #c62828;border-radius:6px;background:#ffebee;color:#b71c1c;">{{ erro_manual }}</p>
+    {% endif %}
+</section>
+
+<section class="painel">
+    <h2>Últimas aberturas da cancela</h2>
+    <table class="tabela-historico">
+        <thead>
+            <tr>
+                <th>Data/hora</th>
+                <th>Tipo</th>
+                <th>Sentido</th>
+                <th>Placa</th>
+                <th>Operador</th>
+                <th>Motivo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for abertura in aberturas %}
+            <tr>
+                <td>{{ abertura.data_hora|date:"d/m/Y H:i:s" }}</td>
+                <td>{{ abertura.get_tipo_display }}</td>
+                <td>{{ abertura.get_sentido_display }}</td>
+                <td>{{ abertura.placa_exibicao }}</td>
+                <td>{{ abertura.operador.nome_completo|default:"—" }}</td>
+                <td>{{ abertura.motivo|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="tabela-vazia">Nenhuma abertura registrada ainda.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}
