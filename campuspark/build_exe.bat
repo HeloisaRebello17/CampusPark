@@ -6,6 +6,8 @@ REM Resultado: dist\CampusPark_Reconhecimento\CampusPark_Reconhecimento.exe
 
 cd /d "%~dp0"
 
+REM Importante: caminhos abaixo sao absolutos (%~dp0) porque --specpath muda a base dos caminhos relativos.
+
 REM usa o Python do venv do projeto, se existir
 set PY=python
 if exist "venv\Scripts\python.exe" set PY=venv\Scripts\python.exe
@@ -22,13 +24,13 @@ echo [3/4] Gerando o executavel (pode levar alguns minutos)...
 %PY% -m PyInstaller --noconfirm --clean --console ^
   --name CampusPark_Reconhecimento ^
   --distpath dist --workpath build\pyi --specpath build ^
-  --paths . ^
+  --paths "%~dp0." ^
   --collect-submodules apps --collect-submodules config --collect-submodules core ^
   --collect-submodules integrations --collect-submodules rest_framework ^
   --hidden-import django.db.backends.postgresql ^
   --hidden-import psycopg --hidden-import psycopg_binary ^
-  --add-data "resources\models;resources\models" ^
-  reconhecimento_app.py
+  --add-data "%~dp0resources\models;resources\models" ^
+  "%~dp0reconhecimento_app.py"
 if errorlevel 1 goto erro
 
 echo [4/4] Copiando o .env para junto do executavel...
