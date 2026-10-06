@@ -1,0 +1,39 @@
+# docker-compose.yml
+# Sobe o CampusPark inteiro com um comando so (na pasta raiz do repositorio):
+#   docker compose up --build
+# Depois abra http://localhost:8000
+#
+# Banco de dados:
+#   - sem DATABASE_URL em campuspark/.env -> usa o PostgreSQL local abaixo (servico "db")
+#   - com DATABASE_URL em campuspark/.env -> usa o banco informado (ex.: o banco do time)
+
+services:
+  web:
+    build: ./campuspark
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: ./campuspark/.env
+        required: false
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: campuspark
+      POSTGRES_USER: campuspark
+      POSTGRES_PASSWORD: campuspark
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campuspark -d campuspark"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  pgdata:
