@@ -1,0 +1,19 @@
+# Nada de segredos nem ambientes locais dentro da imagem
+.env
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+
+# Artefatos do PyInstaller (.exe)
+build/
+dist/
+*.spec
+
+# Os modelos sao baixados pelo Dockerfile (evita copiar um ponteiro Git LFS quebrado)
+*.onnx
+
+.git
+.vscode/
+.idea/
