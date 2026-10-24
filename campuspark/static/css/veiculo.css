@@ -132,6 +132,24 @@
   color: var(--color-text-muted);
 }
 
+.my-vehicle-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+}
+
+.my-vehicle-action {
+  padding: 8px 16px;
+  font-size: 0.82rem;
+}
+
+.my-vehicle-cancel {
+  margin-top: 12px;
+}
+
 .my-vehicle-footer {
   display: flex;
   flex-direction: column;

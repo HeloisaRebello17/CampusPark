@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Cadastro de Veículo · CampusPark{% endblock %}
+{% block title %}{% if editando %}Editar Veículo{% else %}Cadastro de Veículo{% endif %} · CampusPark{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
 <link rel="stylesheet" href="{% static 'css/veiculo.css' %}" />
@@ -9,15 +9,15 @@
 
 {% block content %}
 <div class="app-shell">
-  {% include "partials/aluno_sidebar.html" with active="cadastro-veiculo" %}
+  {% include "partials/aluno_sidebar.html" with active=editando|yesno:"meus-veiculos,cadastro-veiculo" %}
 
   <div class="page-main">
     {% include "partials/aluno_topbar.html" %}
 
     <div class="page-content">
-      <div class="page-eyebrow">Formulário de Ingresso</div>
+      <div class="page-eyebrow">{% if editando %}Edição de Veículo{% else %}Formulário de Ingresso{% endif %}</div>
       <h1 class="page-title">Dados do Veículo</h1>
-      <p class="page-subtitle">Preencha as informações abaixo para vincular um novo veículo ao seu perfil de estudante.</p>
+      <p class="page-subtitle">{% if editando %}Atualize as informações do veículo {{ veiculo.placa }}.{% else %}Preencha as informações abaixo para vincular um novo veículo ao seu perfil de estudante.{% endif %}</p>
 
       {% if erros %}
       <ul style="color:var(--color-primary);font-size:0.82rem;margin:0 0 16px;padding-left:18px;">
@@ -67,9 +67,12 @@
         </div>
 
         <button type="submit" class="btn btn-primary btn-block">
-          Finalizar Cadastro
+          {% if editando %}Salvar Alterações{% else %}Finalizar Cadastro{% endif %}
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M13 6l6 6-6 6" /></svg>
         </button>
+        {% if editando %}
+        <a href="{% url 'meus-veiculos' %}" class="btn btn-outline btn-block my-vehicle-cancel">Cancelar</a>
+        {% endif %}
       </form>
     </div>
 

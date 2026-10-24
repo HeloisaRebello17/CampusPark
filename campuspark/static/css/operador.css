@@ -542,6 +542,67 @@
     background: var(--vermelho-escuro);
 }
 
+.situacao-coluna {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.situacao-coluna .status {
+    white-space: nowrap;
+}
+
+.acoes-linha {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.acoes-linha form {
+    margin: 0;
+}
+
+.botao-acao {
+    display: inline-block;
+    padding: 7px 14px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: var(--vermelho);
+    color: var(--branco);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+}
+
+.botao-acao:hover {
+    background: var(--vermelho-escuro);
+}
+
+.botao-acao--neutro {
+    background: var(--cinza-fundo);
+    color: var(--texto);
+}
+
+.botao-acao--neutro:hover {
+    background: var(--campo-fundo);
+}
+
+.botao-acao--perigo {
+    background: transparent;
+    color: var(--vermelho);
+    border-color: var(--vermelho);
+}
+
+.botao-acao--perigo:hover {
+    background: var(--vermelho);
+    color: var(--branco);
+}
+
 .paginacao {
     display: flex;
     flex-wrap: wrap;
@@ -599,7 +660,8 @@
 }
 
 .form-edicao input[type="text"],
-.form-edicao input[type="email"] {
+.form-edicao input[type="email"],
+.form-edicao select {
     padding: 12px 14px;
     border: 1px solid transparent;
     border-radius: 10px;

@@ -16,6 +16,7 @@
         <nav class="sidebar-nav">
             <a href="{% url 'dashboard' %}" class="{% if secao == 'dashboard' %}ativo{% endif %}">Dashboard</a>
             <a href="{% url 'lista-alunos' %}" class="{% if secao == 'alunos' %}ativo{% endif %}">Lista de Alunos</a>
+            <a href="{% url 'lista-veiculos' %}" class="{% if secao == 'veiculos' %}ativo{% endif %}">Veículos</a>
             <span class="sidebar-desabilitado" title="Em breve">Cadastro</span>
             <a href="{% url 'historico-acessos' %}" class="{% if secao == 'historico' %}ativo{% endif %}">Histórico de Acessos</a>
         </nav>

@@ -2,22 +2,25 @@ import re
 from functools import wraps
 
 from django.conf import settings
+from django.contrib import messages
 from django.db import IntegrityError, transaction
-from django.shortcuts import render, redirect
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from apps.campuspark_acesso.historico import COLUNAS_ALUNO, resposta_csv
 from apps.campuspark_acesso.models import RegistroAcesso, StatusAcesso
 from apps.campuspark_biometria.services import BiometriaService, RostoNaoDetectado
 from apps.campuspark_veiculo.models import TipoVeiculo, Veiculo
+from apps.campuspark_veiculo.services import OperacaoVeiculoNegada, VeiculoService
+from apps.campuspark_veiculo.validators import PLACA_REGEX
 from core.utils import somente_numeros
 from .models import Aluno, Operador
 from .services import UsuarioService
 
 SESSION_ALUNO_ID = "aluno_id"
 SESSION_OPERADOR_ID = "operador_id"
-
-PLACA_REGEX = re.compile(r"^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$")
 
 MESES_PT = [
     "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -248,29 +251,38 @@ def relatorio_mensal_view(request):
     return resposta_csv(registros, f"relatorio_{ano}_{mes:02d}.csv", COLUNAS_ALUNO)
 
 
+TIPO_FORM_PARA_MODELO = {
+    "automovel": TipoVeiculo.CARRO,
+    "motocicleta": TipoVeiculo.MOTO,
+}
+TIPO_MODELO_PARA_FORM = {v: k for k, v in TIPO_FORM_PARA_MODELO.items()}
+
+
+def _ler_form_veiculo(request):
+    """Lê e valida o formulário de veículo do aluno (cadastro e edição). Retorna (valores, seguro, erros)."""
+    valores = {
+        "tipo_veiculo": request.POST.get("tipo_veiculo", "automovel"),
+        "placa": re.sub(r"[^A-Za-z0-9]", "", request.POST.get("placa", "")).upper(),
+        "modelo_ano": request.POST.get("modelo_ano", "").strip(),
+    }
+    seguro_ativo = request.POST.get("seguro_ativo") == "on"
+
+    erros = []
+    if not valores["placa"]:
+        erros.append("Informe a placa do veículo.")
+    elif not PLACA_REGEX.match(valores["placa"]):
+        erros.append("Placa inválida. Use o formato Mercosul: 4 letras e 3 números, ex: ABC1D23.")
+
+    if not valores["modelo_ano"]:
+        erros.append("Informe o modelo e ano do veículo.")
+
+    return valores, seguro_ativo, erros
+
+
 @aluno_required
 def cadastro_veiculo_view(request):
     if request.method == "POST":
-        valores = {
-            "tipo_veiculo": request.POST.get("tipo_veiculo", "automovel"),
-            "placa": re.sub(r"[^A-Za-z0-9]", "", request.POST.get("placa", "")).upper(),
-            "modelo_ano": request.POST.get("modelo_ano", "").strip(),
-        }
-        seguro_ativo = request.POST.get("seguro_ativo") == "on"
-
-        erros = []
-        if not valores["placa"]:
-            erros.append("Informe a placa do veículo.")
-        elif not PLACA_REGEX.match(valores["placa"]):
-            erros.append("Placa inválida. Use o formato Mercosul: 4 letras e 3 números, ex: ABC1D23.")
-
-        if not valores["modelo_ano"]:
-            erros.append("Informe o modelo e ano do veículo.")
-
-        tipo_map = {
-            "automovel": TipoVeiculo.CARRO,
-            "motocicleta": TipoVeiculo.MOTO,
-        }
+        valores, seguro_ativo, erros = _ler_form_veiculo(request)
 
         if not erros:
             try:
@@ -278,7 +290,7 @@ def cadastro_veiculo_view(request):
                     Veiculo.objects.create(
                         placa=valores["placa"],
                         aluno=request.aluno,
-                        tipo=tipo_map.get(valores["tipo_veiculo"], TipoVeiculo.CARRO),
+                        tipo=TIPO_FORM_PARA_MODELO.get(valores["tipo_veiculo"], TipoVeiculo.CARRO),
                         modelo=valores["modelo_ano"],
                         seguro_ativo=seguro_ativo,
                         renavam=None,
@@ -297,6 +309,63 @@ def cadastro_veiculo_view(request):
         }, status=400)
 
     return render(request, "veiculo/cadastro_veiculo.html", {"aluno": request.aluno})
+
+
+@aluno_required
+def editar_veiculo_view(request, veiculo_id):
+    """Aluno altera os dados do próprio veículo (RF13). A autorização é exclusiva do operador."""
+    veiculo = get_object_or_404(Veiculo, pk=veiculo_id, aluno=request.aluno)
+
+    try:
+        VeiculoService.garantir_fora_do_estacionamento(veiculo)
+    except OperacaoVeiculoNegada as e:
+        messages.error(request, str(e))
+        return redirect("meus-veiculos")
+
+    contexto = {"aluno": request.aluno, "veiculo": veiculo, "editando": True}
+
+    if request.method == "POST":
+        valores, seguro_ativo, erros = _ler_form_veiculo(request)
+
+        if not erros:
+            veiculo.placa = valores["placa"]
+            veiculo.tipo = TIPO_FORM_PARA_MODELO.get(valores["tipo_veiculo"], TipoVeiculo.CARRO)
+            veiculo.modelo = valores["modelo_ano"]
+            veiculo.seguro_ativo = seguro_ativo
+            try:
+                with transaction.atomic():
+                    veiculo.save(update_fields=["placa", "tipo", "modelo", "seguro_ativo"])
+            except IntegrityError:
+                erros.append("Já existe um veículo cadastrado com essa placa.")
+            else:
+                messages.success(request, "Veículo atualizado com sucesso.")
+                return redirect("meus-veiculos")
+
+        contexto.update(erros=erros, valores=valores, seguro_ativo=seguro_ativo)
+        return render(request, "veiculo/cadastro_veiculo.html", contexto, status=400)
+
+    contexto.update(
+        valores={
+            "tipo_veiculo": TIPO_MODELO_PARA_FORM.get(veiculo.tipo, "automovel"),
+            "placa": veiculo.placa,
+            "modelo_ano": veiculo.modelo,
+        },
+        seguro_ativo=veiculo.seguro_ativo,
+    )
+    return render(request, "veiculo/cadastro_veiculo.html", contexto)
+
+
+@aluno_required
+@require_POST
+def excluir_veiculo_view(request, veiculo_id):
+    veiculo = get_object_or_404(Veiculo, pk=veiculo_id, aluno=request.aluno)
+    try:
+        VeiculoService.excluir(veiculo)
+    except OperacaoVeiculoNegada as e:
+        messages.error(request, str(e))
+    else:
+        messages.success(request, "Veículo removido com sucesso.")
+    return redirect("meus-veiculos")
 
 
 @aluno_required
