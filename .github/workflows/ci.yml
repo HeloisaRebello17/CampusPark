@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Testes (manage.py test)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: campuspark
+          POSTGRES_PASSWORD: campuspark
+          POSTGRES_DB: campuspark
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U campuspark"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DJANGO_SECRET_KEY: chave-temporaria-usada-so-no-ci
+      DJANGO_DEBUG: "True"
+      DJANGO_SETTINGS_MODULE: config.settings
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: "postgresql://campuspark:campuspark@localhost:5432/campuspark"
+
+    steps:
+      - name: Baixar o codigo
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: campuspark/requirements.txt
+
+      # mysqlclient e opencv precisam dessas bibliotecas de sistema pra
+      # instalar/importar no Linux (nao vem por padrao no runner).
+      - name: Instalar dependencias de sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            default-libmysqlclient-dev pkg-config build-essential \
+            libgl1 libglib2.0-0
+
+      - name: Instalar dependencias Python
+        working-directory: campuspark
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Rodar testes
+        working-directory: campuspark
+        run: python manage.py test
+
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o codigo
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar ruff
+        run: pip install ruff
+
+      # So erros reais (sintaxe, import nao usado, nome indefinido) —
+      # nao trava o CI por formatacao/estilo.
+      - name: Checar erros de sintaxe e codigo
+        working-directory: campuspark
+        run: ruff check --select=E9,F --exclude=migrations .
