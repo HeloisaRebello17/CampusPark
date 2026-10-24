@@ -102,9 +102,26 @@
   line-height: 1.5;
 }
 
+.report-card {
+  padding: 24px;
+}
+
+.report-month {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 6px 0 4px;
+}
+
+.report-desc {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
 .visit-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 28px;
   padding: 20px 24px;
   border-left: 3px solid var(--color-primary);
@@ -122,6 +139,7 @@
   justify-content: center;
   font-weight: 800;
   flex-shrink: 0;
+  align-self: center;
 }
 
 .visit-info {

@@ -51,6 +51,16 @@
             <div class="capacity-value">—</div>
             <p class="capacity-desc">O monitoramento de vagas em tempo real ainda não está disponível.</p>
           </div>
+
+          <div class="card report-card">
+            <div class="page-eyebrow">Relatório Mensal</div>
+            <div class="report-month">{{ mes_atual }}</div>
+            <p class="report-desc">{{ registros_mes }} registro{{ registros_mes|pluralize }} de entrada/saída até agora.</p>
+            <a href="{% url 'relatorio-mensal' %}" class="btn btn-outline btn-block">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M12 18v-6" /><path d="m9 15 3 3 3-3" /></svg>
+              Baixar Relatório (CSV)
+            </a>
+          </div>
         </div>
 
         <div class="dash-col-main">
@@ -59,7 +69,10 @@
             <span class="visit-icon">P</span>
             <div class="visit-info">
               <span class="stat-label">Última Visita</span>
-              <span class="visit-value">{{ ultimo_registro.data_entrada|date:"d/m/Y H:i" }}</span>
+              <span class="visit-value">↓ Entrada {{ ultimo_registro.data_entrada|date:"d/m/Y - H:i" }}</span>
+              {% if ultimo_registro.data_saida %}
+              <span class="visit-value">↑ Saída {{ ultimo_registro.data_saida|date:"d/m/Y - H:i" }}</span>
+              {% endif %}
             </div>
             <div class="visit-info">
               <span class="stat-label">Veículo</span>
