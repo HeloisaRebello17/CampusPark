@@ -40,6 +40,7 @@ urlpatterns = [
     path("painel/", usuario_pages.dashboard_view, name="aluno-dashboard"),
     path("veiculos/", usuario_pages.meus_veiculos_view, name="meus-veiculos"),
     path("veiculos/novo/", usuario_pages.cadastro_veiculo_view, name="veiculo-cadastro"),
+    path("painel/relatorio/", usuario_pages.relatorio_mensal_view, name="relatorio-mensal"),
 
     # Telas do operador/administrador
     path("operador/", include("apps.campuspark_usuario.web_urls")),

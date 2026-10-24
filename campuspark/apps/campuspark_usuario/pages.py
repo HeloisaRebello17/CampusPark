@@ -1,9 +1,12 @@
+import csv
 import re
 from functools import wraps
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
+from django.http import HttpResponse
 from django.shortcuts import render, redirect
+from django.utils import timezone
 
 from apps.campuspark_acesso.models import RegistroAcesso, StatusAcesso
 from apps.campuspark_biometria.services import BiometriaService, RostoNaoDetectado
@@ -16,6 +19,11 @@ SESSION_ALUNO_ID = "aluno_id"
 SESSION_OPERADOR_ID = "operador_id"
 
 PLACA_REGEX = re.compile(r"^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$")
+
+MESES_PT = [
+    "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+]
 
 # Fotos do rosto tiradas no cadastro (reconhecimento facial na saida).
 # A tela captura FOTOS_ROSTO_ALVO; o servidor exige que pelo menos FOTOS_ROSTO_MINIMO
@@ -198,13 +206,49 @@ def dashboard_view(request):
 
     primeiro_nome = request.aluno.nome_completo.strip().split(" ")[0] if request.aluno.nome_completo else ""
 
+    agora = timezone.localtime()
+    registros_mes = RegistroAcesso.objects.filter(
+        veiculo__in=veiculos, data_entrada__year=agora.year, data_entrada__month=agora.month,
+    ).count()
+    mes_atual = f"{MESES_PT[agora.month - 1].capitalize()} de {agora.year}"
+
     return render(request, "usuario/dashboard.html", {
         "aluno": request.aluno,
         "primeiro_nome": primeiro_nome,
         "veiculos": veiculos,
         "veiculos_no_campus": len(dentro_ids),
         "ultimo_registro": ultimo_registro,
+        "mes_atual": mes_atual,
+        "registros_mes": registros_mes,
     })
+
+
+@aluno_required
+def relatorio_mensal_view(request):
+    """Exporta em CSV os acessos (entrada/saida) do mes atual do aluno logado."""
+    agora = timezone.localtime()
+    veiculos = Veiculo.objects.filter(aluno=request.aluno)
+    registros = (
+        RegistroAcesso.objects
+        .filter(veiculo__in=veiculos, data_entrada__year=agora.year, data_entrada__month=agora.month)
+        .select_related("veiculo")
+        .order_by("data_entrada")
+    )
+
+    nome_arquivo = f"relatorio_{agora.year}_{agora.month:02d}.csv"
+    response = HttpResponse(content_type="text/csv; charset=utf-8-sig")
+    response["Content-Disposition"] = f'attachment; filename="{nome_arquivo}"'
+
+    writer = csv.writer(response, delimiter=";")
+    writer.writerow(["Placa", "Entrada", "Saída", "Status"])
+    for registro in registros:
+        writer.writerow([
+            registro.veiculo.placa,
+            timezone.localtime(registro.data_entrada).strftime("%d/%m/%Y %H:%M"),
+            timezone.localtime(registro.data_saida).strftime("%d/%m/%Y %H:%M") if registro.data_saida else "",
+            registro.get_status_display(),
+        ])
+    return response
 
 
 @aluno_required
@@ -221,7 +265,7 @@ def cadastro_veiculo_view(request):
         if not valores["placa"]:
             erros.append("Informe a placa do veículo.")
         elif not PLACA_REGEX.match(valores["placa"]):
-            erros.append("Placa inválida. Use o formato Mercosul: 3 letras e 4 números, ex: ABC1D23.")
+            erros.append("Placa inválida. Use o formato Mercosul: 4 letras e 3 números, ex: ABC1D23.")
 
         if not valores["modelo_ano"]:
             erros.append("Informe o modelo e ano do veículo.")
