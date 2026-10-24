@@ -173,7 +173,7 @@ class HistoricoAcessosViewTest(TestCase):
         self.assertEqual(resp["Content-Type"], "text/csv; charset=utf-8-sig")
         self.assertIn("attachment;", resp["Content-Disposition"])
         linhas = resp.content.decode("utf-8-sig").strip().splitlines()
-        self.assertEqual(linhas[0], "Aluno;Matrícula;Placa;Tipo;Entrada;Saída;Permanência;Status;Operador")
+        self.assertEqual(linhas[0], "Nome;Matrícula;Origem;Documento (visitante);Placa;Tipo;Entrada;Saída;Permanência;Status;Liberação;Motivo;Operador")
         self.assertEqual(len(linhas), 2)
         self.assertIn("BBB2B22", linhas[1])
         self.assertIn("2h 00min", linhas[1])
@@ -187,3 +187,173 @@ class HistoricoAcessosViewTest(TestCase):
         self.assertEqual(formatar_permanencia(timedelta(minutes=45)), "45min")
         self.assertEqual(formatar_permanencia(timedelta(hours=3, minutes=5)), "3h 05min")
         self.assertEqual(formatar_permanencia(timedelta(days=1, hours=2)), "1d 2h 00min")
+
+
+class EntradaSaidaManualTest(TestCase):
+    """Entrada/saída manual pelo operador, para aluno cadastrado ou visitante."""
+
+    def setUp(self):
+        liberar_vagas()
+        self.aluno = Aluno.objects.create(
+            matricula="1234567", cpf="11111111111", nome_completo="Aluna Manual",
+            email_institucional="manual@catolicasc.org", senha_hash="x",
+        )
+        self.veiculo = Veiculo.objects.create(aluno=self.aluno, placa="ABC1D23", tipo="carro", tag_rfid="TAG1")
+        tipo = TipoOperador.objects.create(descricao="Porteiro")
+        self.operador = Operador.objects.create(
+            tipo_operador=tipo, cpf="33333333333", nome_completo="Porteiro Teste",
+            email="porteiro@catolicasc.org", senha_hash="x",
+        )
+
+    def visitante(self, **overrides):
+        dados = {"placa": "vis-1234", "motivo": "Palestrante", "tipo": "carro",
+                 "nome": "Carlos Visitante", "documento": "123.456.789-01"}
+        dados.update(overrides)
+        return AcessoService.entrada_manual(self.operador, **dados)
+
+    def test_entrada_manual_de_cadastrado_cria_registro_e_abertura(self):
+        registro, aviso = AcessoService.entrada_manual(self.operador, "abc-1d23", "TAG não leu")
+        self.assertEqual(aviso, "")
+        self.assertEqual(registro.veiculo, self.veiculo)
+        self.assertTrue(registro.liberacao_manual)
+        self.assertEqual(registro.operador, self.operador)
+        abertura = AberturaCancela.objects.get()
+        self.assertEqual(abertura.tipo, TipoAbertura.MANUAL)
+        self.assertEqual(abertura.registro, registro)
+
+    def test_cadastrado_que_entrou_manual_sai_pela_tag(self):
+        AcessoService.entrada_manual(self.operador, "ABC1D23", "TAG não leu")
+        registro = AcessoService.registrar_saida("TAG1")
+        self.assertEqual(registro.status, StatusAcesso.FINALIZADO)
+
+    def test_cadastrado_bloqueado_entra_com_aviso(self):
+        self.veiculo.autorizado = False
+        self.veiculo.save()
+        registro, aviso = AcessoService.entrada_manual(self.operador, "ABC1D23", "Regularizando cadastro")
+        self.assertIn("bloqueado", aviso)
+        self.assertIn("bloqueado/inativo", registro.motivo)
+
+    def test_cadastrado_ja_dentro_nao_entra_de_novo(self):
+        AcessoService.validar_entrada("TAG1")
+        with self.assertRaises(AcessoNegado):
+            AcessoService.entrada_manual(self.operador, "ABC1D23", "Teste")
+
+    def test_visitante_cria_registro_sem_veiculo(self):
+        registro, _ = self.visitante()
+        self.assertIsNone(registro.veiculo)
+        self.assertEqual(registro.placa_visitante, "VIS1234")
+        self.assertEqual(registro.documento_visitante, "12345678901")
+        self.assertEqual(registro.nome_exibicao, "Carlos Visitante")
+        self.assertEqual(registro.status, StatusAcesso.DENTRO)
+
+    def test_visitante_exige_dados(self):
+        for campo, valor in [("tipo", ""), ("nome", " "), ("documento", "12"), ("motivo", "")]:
+            with self.subTest(campo=campo):
+                with self.assertRaises(AcessoNegado):
+                    self.visitante(**{campo: valor})
+        self.assertFalse(RegistroAcesso.objects.exists())
+
+    def test_placa_invalida(self):
+        with self.assertRaises(AcessoNegado):
+            self.visitante(placa="12")
+
+    def test_visitante_ocupa_vaga_e_respeita_lotacao(self):
+        self.visitante()  # ocupa a única vaga de carro
+        with self.assertRaises(AcessoNegado):
+            AcessoService.validar_entrada("TAG1")  # aluno não entra: lotado
+        with self.assertRaises(AcessoNegado):
+            self.visitante(placa="OUT9876")
+        self.visitante(placa="MOT1234", tipo="moto")  # moto ainda tem vaga
+
+    def test_visitante_ja_dentro_nao_entra_de_novo(self):
+        ConfiguracaoEstacionamento.objects.update(vagas_carro=5)
+        self.visitante()
+        with self.assertRaises(AcessoNegado):
+            self.visitante()
+
+    def test_saida_manual_libera_vaga(self):
+        registro, _ = self.visitante()
+        AcessoService.saida_manual(self.operador, registro.id)
+        registro.refresh_from_db()
+        self.assertEqual(registro.status, StatusAcesso.FINALIZADO)
+        self.assertIsNotNone(registro.data_saida)
+        self.assertEqual(
+            AberturaCancela.objects.filter(sentido=SentidoAbertura.SAIDA, registro=registro).count(), 1
+        )
+        AcessoService.validar_entrada("TAG1")  # vaga voltou a ficar livre
+
+    def test_saida_manual_de_registro_ja_finalizado(self):
+        registro, _ = self.visitante()
+        AcessoService.saida_manual(self.operador, registro.id)
+        with self.assertRaises(AcessoNegado):
+            AcessoService.saida_manual(self.operador, registro.id)
+
+
+class CancelaManualViewTest(TestCase):
+    """Tela da cancela: consulta de placa, entrada e saída manual."""
+
+    def setUp(self):
+        liberar_vagas()
+        aluno = Aluno.objects.create(
+            matricula="1234567", cpf="11111111111", nome_completo="Aluna Tela",
+            email_institucional="tela@catolicasc.org", senha_hash="x",
+        )
+        Veiculo.objects.create(aluno=aluno, placa="ABC1D23", tipo="carro", autorizado=False)
+        tipo = TipoOperador.objects.create(descricao="Porteiro")
+        operador = Operador.objects.create(
+            tipo_operador=tipo, cpf="33333333333", nome_completo="Porteiro Teste",
+            email="porteiro@catolicasc.org", senha_hash="x",
+        )
+        session = self.client.session
+        session["operador_id"] = operador.id
+        session.save()
+        self.url = reverse("cancela")
+
+    def test_consulta_placa_cadastrada_mostra_aluno_e_alerta_bloqueio(self):
+        resp = self.client.get(self.url, {"placa": "abc1d23"})
+        self.assertContains(resp, "Aluna Tela")
+        self.assertContains(resp, "bloqueado")
+
+    def test_consulta_placa_sem_cadastro_pede_dados_do_visitante(self):
+        resp = self.client.get(self.url, {"placa": "XYZ9876"})
+        self.assertContains(resp, "sem cadastro")
+        self.assertContains(resp, 'name="documento"')
+
+    def test_entrada_e_saida_de_visitante_pela_tela(self):
+        resp = self.client.post(self.url, {
+            "acao": "entrada_manual", "placa": "XYZ9876", "tipo": "carro",
+            "nome": "Visitante Tela", "documento": "1234567", "motivo": "Entrega",
+        })
+        self.assertContains(resp, "Entrada de XYZ9876 registrada")
+        registro = RegistroAcesso.objects.get(placa_visitante="XYZ9876")
+
+        historico = self.client.get(reverse("historico-acessos"), {"origem": "visitante"})
+        self.assertContains(historico, "Visitante Tela")
+
+        resp = self.client.post(self.url, {"acao": "saida_manual", "registro_id": registro.id})
+        self.assertContains(resp, "Saída de XYZ9876 registrada")
+        registro.refresh_from_db()
+        self.assertEqual(registro.status, StatusAcesso.FINALIZADO)
+
+    def test_entrada_de_visitante_com_dados_faltando_mantem_formulario(self):
+        resp = self.client.post(self.url, {
+            "acao": "entrada_manual", "placa": "XYZ9876", "tipo": "carro",
+            "nome": "Visitante Tela", "documento": "", "motivo": "Entrega",
+        })
+        self.assertContains(resp, "Informe o CPF ou RG", status_code=400)
+        self.assertContains(resp, 'value="Visitante Tela"', status_code=400)
+
+    def test_saida_manual_com_registro_invalido(self):
+        resp = self.client.post(self.url, {"acao": "saida_manual", "registro_id": "abc"})
+        self.assertEqual(resp.status_code, 400)
+
+    def test_exportacao_inclui_visitante(self):
+        self.client.post(self.url, {
+            "acao": "entrada_manual", "placa": "XYZ9876", "tipo": "moto",
+            "nome": "Visitante CSV", "documento": "1234567", "motivo": "Entrega",
+        })
+        csv = self.client.get(reverse("historico-exportar")).content.decode("utf-8-sig")
+        linha = csv.strip().splitlines()[1]
+        self.assertIn("Visitante CSV;;Visitante;1234567;XYZ9876;Moto", linha)
+        self.assertIn("Manual;Entrega", linha)
+

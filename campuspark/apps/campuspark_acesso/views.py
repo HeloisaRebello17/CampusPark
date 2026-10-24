@@ -14,7 +14,7 @@ from core.permissions import (
     operador_login_required, administrador_required, OperadorAutenticado, DispositivoAutorizado,
 )
 from .historico import COLUNAS_OPERADOR, filtrar_registros, formatar_permanencia, resposta_csv
-from .services import AcessoService, AcessoNegado, anunciar_rosto, anunciar_acesso
+from .services import AcessoService, AcessoNegado, anunciar_rosto, anunciar_acesso, vagas_ocupadas
 from .serializers import RegistroAcessoSerializer
 from .models import (
     RegistroAcesso, StatusAcesso, ConfiguracaoEstacionamento,
@@ -30,9 +30,8 @@ class DashboardView(View):
 
     def get(self, request):
         config = ConfiguracaoEstacionamento.obter()
-        dentro = RegistroAcesso.objects.filter(status=StatusAcesso.DENTRO).select_related("veiculo")
-        carros_dentro = dentro.filter(veiculo__tipo=TipoVeiculo.CARRO).count()
-        motos_dentro = dentro.filter(veiculo__tipo=TipoVeiculo.MOTO).count()
+        carros_dentro = vagas_ocupadas(TipoVeiculo.CARRO)
+        motos_dentro = vagas_ocupadas(TipoVeiculo.MOTO)
         historico = (
             RegistroAcesso.objects
             .select_related("veiculo", "veiculo__aluno", "operador")
@@ -123,8 +122,8 @@ class AtualizarVagasView(View):
 
 @method_decorator(operador_login_required, name="dispatch")
 class CancelaView(View):
-    """Controle da cancela: simulação da liberação automática (TAG + rosto), liberação manual
-    pelo operador e histórico das últimas aberturas."""
+    """Controle da cancela: simulação da liberação automática (TAG + rosto), entrada/saída manual
+    pelo operador (aluno cadastrado ou visitante), abertura avulsa e histórico das aberturas."""
 
     template_name = "operador/cancela.html"
 
@@ -134,24 +133,85 @@ class CancelaView(View):
             .select_related("veiculo", "operador")
             .order_by("-data_hora")[:30]
         )
+        dentro = (
+            RegistroAcesso.objects.filter(status=StatusAcesso.DENTRO)
+            .select_related("veiculo", "veiculo__aluno")
+            .order_by("-data_entrada")
+        )
         context = {
             "operador": request.operador,
             "secao": "cancela",
             "aberturas": aberturas,
+            "dentro": dentro,
+            "tipos_veiculo": TipoVeiculo.choices,
         }
         context.update(extra)
         return context
 
     def get(self, request):
-        return render(request, self.template_name, self._contexto(request))
+        extra = {}
+        if "placa" in request.GET:
+            extra["consulta"] = self._consultar(request.GET.get("placa", ""))
+        return render(request, self.template_name, self._contexto(request, **extra))
 
     def post(self, request):
         acao = request.POST.get("acao")
         if acao == "simular":
             return self._simular(request)
+        if acao == "entrada_manual":
+            return self._entrada_manual(request)
+        if acao == "saida_manual":
+            return self._saida_manual(request)
         if acao == "manual":
             return self._manual(request)
         return render(request, self.template_name, self._contexto(request))
+
+    @staticmethod
+    def _consultar(placa):
+        """Passo 1 da entrada manual: a placa é de um veículo cadastrado ou de um visitante?"""
+        try:
+            placa, veiculo = AcessoService.consultar_placa(placa)
+        except AcessoNegado as e:
+            return {"erro": str(e), "placa": placa}
+        bloqueado = veiculo is not None and (not veiculo.autorizado or not veiculo.aluno.ativo)
+        return {"placa": placa, "veiculo": veiculo, "bloqueado": bloqueado}
+
+    def _entrada_manual(self, request):
+        placa = request.POST.get("placa", "")
+        try:
+            registro, aviso = AcessoService.entrada_manual(
+                request.operador, placa,
+                motivo=request.POST.get("motivo", ""),
+                tipo=request.POST.get("tipo", ""),
+                nome=request.POST.get("nome", ""),
+                documento=request.POST.get("documento", ""),
+            )
+        except AcessoNegado as e:
+            extra = {
+                "consulta": self._consultar(placa),
+                "erro_entrada_manual": str(e),
+                "valores_manual": request.POST,
+            }
+            return render(request, self.template_name, self._contexto(request, **extra), status=400)
+
+        quem = "Visitante" if registro.eh_visitante else "Aluno"
+        extra = {
+            "sucesso_entrada_manual": f"Entrada de {registro.placa_exibicao} registrada ({quem}: "
+                                      f"{registro.nome_exibicao}). A cancela foi aberta.",
+            "aviso_entrada_manual": aviso,
+        }
+        return render(request, self.template_name, self._contexto(request, **extra))
+
+    def _saida_manual(self, request):
+        try:
+            registro = AcessoService.saida_manual(
+                request.operador, request.POST.get("registro_id"), request.POST.get("motivo_saida", ""),
+            )
+        except (AcessoNegado, ValueError) as e:
+            extra = {"erro_saida_manual": str(e) if isinstance(e, AcessoNegado) else "Registro inválido."}
+            return render(request, self.template_name, self._contexto(request, **extra), status=400)
+        extra = {"sucesso_saida_manual": f"Saída de {registro.placa_exibicao} registrada. A cancela foi aberta."}
+        return render(request, self.template_name, self._contexto(request, **extra))
 
     def _simular(self, request):
         tag = request.POST.get("tag_rfid", "").strip()

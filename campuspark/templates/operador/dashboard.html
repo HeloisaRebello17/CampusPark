@@ -52,7 +52,7 @@
             <tr>
                 <th>Placa</th>
                 <th>Tipo</th>
-                <th>Aluno</th>
+                <th>Aluno / Visitante</th>
                 <th>Matrícula</th>
                 <th>Entrada</th>
                 <th>Saída</th>
@@ -62,10 +62,14 @@
         <tbody>
             {% for registro in historico %}
             <tr>
-                <td>{{ registro.veiculo.placa }}</td>
-                <td>{{ registro.veiculo.get_tipo_display }}</td>
-                <td>{{ registro.veiculo.aluno.nome_completo }}</td>
-                <td>{{ registro.veiculo.aluno.matricula }}</td>
+                <td>{{ registro.placa_exibicao }}</td>
+                <td>{{ registro.tipo_exibicao }}</td>
+                <td>
+                    {{ registro.nome_exibicao }}
+                    {% if registro.eh_visitante %}<span class="selo">Visitante</span>{% endif %}
+                    {% if registro.liberacao_manual %}<span class="selo selo--manual" title="{{ registro.motivo }}">Manual</span>{% endif %}
+                </td>
+                <td>{{ registro.matricula_exibicao|default:"—" }}</td>
                 <td>{{ registro.data_entrada|date:"d/m/Y H:i" }}</td>
                 <td>{{ registro.data_saida|date:"d/m/Y H:i"|default:"—" }}</td>
                 <td><span class="status status--{{ registro.status|lower }}">{{ registro.get_status_display }}</span></td>

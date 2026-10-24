@@ -336,7 +336,8 @@
     margin-bottom: 6px;
 }
 
-.form-vagas input {
+.form-vagas input,
+.form-vagas select {
     padding: 10px 12px;
     border: 1px solid transparent;
     border-radius: 10px;
@@ -346,7 +347,8 @@
     color: var(--texto);
 }
 
-.form-vagas input:focus {
+.form-vagas input:focus,
+.form-vagas select:focus {
     outline: none;
     border-color: var(--azul);
 }
@@ -828,4 +830,94 @@
     align-self: center;
     color: var(--texto-suave);
     font-size: 12px;
+}
+
+.selo {
+    display: inline-block;
+    margin-left: 4px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: var(--cinza-fundo);
+    color: var(--texto-suave);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+}
+
+.selo--manual {
+    background: var(--campo-fundo);
+    color: var(--azul);
+}
+
+/* --- Cancela: entrada/saída manual --- */
+
+.consulta-placa {
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 12px;
+    background: var(--cinza-fundo);
+}
+
+.consulta-placa p {
+    margin: 0 0 8px;
+    font-size: 13px;
+}
+
+.aviso {
+    margin: 12px 0 0;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.aviso--sucesso {
+    border: 1px solid #2e7d32;
+    background: #e8f5e9;
+    color: #1b5e20;
+}
+
+.aviso--erro {
+    border: 1px solid #c62828;
+    background: #ffebee;
+    color: #b71c1c;
+}
+
+.aviso--alerta {
+    border: 1px solid #ef6c00;
+    background: #fff3e0;
+    color: #8a4b00;
+}
+
+.form-saida-manual {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.form-saida-manual input {
+    min-width: 140px;
+    padding: 7px 10px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: var(--campo-fundo);
+    font-size: 12px;
+}
+
+.form-saida-manual button {
+    padding: 7px 12px;
+    border: none;
+    border-radius: 8px;
+    background: var(--vermelho);
+    color: var(--branco);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.form-saida-manual button:hover {
+    background: var(--vermelho-escuro);
 }

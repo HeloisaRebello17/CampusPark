@@ -3,8 +3,9 @@ from .models import RegistroAcesso, ConfiguracaoEstacionamento, AberturaCancela
 
 @admin.register(RegistroAcesso)
 class RegistroAcessoAdmin(admin.ModelAdmin):
-    list_display = ("veiculo", "status", "data_entrada", "data_saida")
-    list_filter = ("status",)
+    list_display = ("placa_exibicao", "nome_exibicao", "status", "liberacao_manual", "data_entrada", "data_saida")
+    list_filter = ("status", "liberacao_manual")
+    search_fields = ("veiculo__placa", "placa_visitante", "nome_visitante", "veiculo__aluno__nome_completo")
 
 
 @admin.register(ConfiguracaoEstacionamento)

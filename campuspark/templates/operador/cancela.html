@@ -4,7 +4,7 @@
 
 {% block painel_conteudo %}
 <h1 class="painel-titulo">Controle da Cancela<span class="painel-titulo-linha"></span></h1>
-<p class="painel-subtitulo">Liberação automática (simulação) e liberação manual</p>
+<p class="painel-subtitulo">Liberação automática (simulação), entrada e saída manual</p>
 
 <section class="painel">
     <h2>Liberação automática (simulação)</h2>
@@ -51,8 +51,122 @@
 </section>
 
 <section class="painel">
-    <h2>Liberação manual</h2>
-    <p>Use quando a TAG ou o rosto não puderem ser lidos. A abertura fica registrada com o seu nome e o motivo.</p>
+    <h2>Entrada manual</h2>
+    <p>Use quando a TAG ou o rosto não puderem ser lidos, ou para visitantes sem cadastro. A entrada fica no histórico, ocupa vaga e é registrada com o seu nome e o motivo.</p>
+    <form method="get" class="form-vagas">
+        <div>
+            <label for="placa_consulta">Placa do veículo</label>
+            <input type="text" id="placa_consulta" name="placa" maxlength="8" value="{{ consulta.placa|default:'' }}" placeholder="ABC1D23" required>
+        </div>
+        <button type="submit">Consultar placa</button>
+    </form>
+
+    {% if consulta.erro %}
+    <p class="aviso aviso--erro">{{ consulta.erro }}</p>
+    {% elif consulta.veiculo %}
+    <div class="consulta-placa">
+        <p><strong>Veículo cadastrado:</strong> {{ consulta.veiculo.placa }} · {{ consulta.veiculo.get_tipo_display }}{% if consulta.veiculo.modelo %} · {{ consulta.veiculo.fabricante }} {{ consulta.veiculo.modelo }}{% endif %}</p>
+        <p><strong>Aluno:</strong> {{ consulta.veiculo.aluno.nome_completo }} (RA {{ consulta.veiculo.aluno.matricula }})</p>
+        {% if consulta.bloqueado %}
+        <p class="aviso aviso--alerta">Este veículo está <strong>bloqueado</strong> ou o aluno está <strong>inativo</strong>. Você pode liberar mesmo assim; o motivo e o seu nome ficam registrados.</p>
+        {% endif %}
+        <form method="post" class="form-vagas">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="entrada_manual">
+            <input type="hidden" name="placa" value="{{ consulta.placa }}">
+            <div>
+                <label for="motivo_cadastrado">Motivo (obrigatório)</label>
+                <input type="text" id="motivo_cadastrado" name="motivo" maxlength="255" value="{{ valores_manual.motivo|default:'' }}" placeholder="Ex: TAG não leu" required>
+            </div>
+            <button type="submit">Liberar entrada</button>
+        </form>
+    </div>
+    {% elif consulta %}
+    <div class="consulta-placa">
+        <p><strong>Placa {{ consulta.placa }} sem cadastro</strong> — preencha os dados do visitante.</p>
+        <form method="post" class="form-vagas">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="entrada_manual">
+            <input type="hidden" name="placa" value="{{ consulta.placa }}">
+            <div>
+                <label for="tipo_visitante">Tipo do veículo</label>
+                <select id="tipo_visitante" name="tipo" required>
+                    <option value="">Selecione</option>
+                    {% for valor, rotulo in tipos_veiculo %}
+                        <option value="{{ valor }}" {% if valores_manual.tipo == valor %}selected{% endif %}>{{ rotulo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="nome_visitante">Nome do motorista</label>
+                <input type="text" id="nome_visitante" name="nome" maxlength="200" value="{{ valores_manual.nome|default:'' }}" required>
+            </div>
+            <div>
+                <label for="documento_visitante">CPF ou RG</label>
+                <input type="text" id="documento_visitante" name="documento" maxlength="20" value="{{ valores_manual.documento|default:'' }}" required>
+            </div>
+            <div>
+                <label for="motivo_visitante">Motivo (obrigatório)</label>
+                <input type="text" id="motivo_visitante" name="motivo" maxlength="255" value="{{ valores_manual.motivo|default:'' }}" placeholder="Ex: palestrante convidado" required>
+            </div>
+            <button type="submit">Liberar visitante</button>
+        </form>
+    </div>
+    {% endif %}
+
+    {% if erro_entrada_manual %}<p class="aviso aviso--erro">{{ erro_entrada_manual }}</p>{% endif %}
+    {% if sucesso_entrada_manual %}<p class="aviso aviso--sucesso">{{ sucesso_entrada_manual }}</p>{% endif %}
+    {% if aviso_entrada_manual %}<p class="aviso aviso--alerta">{{ aviso_entrada_manual }}</p>{% endif %}
+</section>
+
+<section class="painel">
+    <h2>Veículos no estacionamento</h2>
+    <p>Registre aqui a saída de visitantes ou de veículos cuja TAG não foi lida na saída.</p>
+    {% if erro_saida_manual %}<p class="aviso aviso--erro">{{ erro_saida_manual }}</p>{% endif %}
+    {% if sucesso_saida_manual %}<p class="aviso aviso--sucesso">{{ sucesso_saida_manual }}</p>{% endif %}
+    <table class="tabela-historico">
+        <thead>
+            <tr>
+                <th>Placa</th>
+                <th>Tipo</th>
+                <th>Aluno / Visitante</th>
+                <th>Entrada</th>
+                <th>Saída manual</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for registro in dentro %}
+            <tr>
+                <td>{{ registro.placa_exibicao }}</td>
+                <td>{{ registro.tipo_exibicao }}</td>
+                <td>
+                    {{ registro.nome_exibicao }}
+                    {% if registro.eh_visitante %}<span class="selo">Visitante</span>{% endif %}
+                    {% if registro.liberacao_manual %}<span class="selo selo--manual" title="{{ registro.motivo }}">Manual</span>{% endif %}
+                </td>
+                <td>{{ registro.data_entrada|date:"d/m/Y H:i" }}</td>
+                <td>
+                    <form method="post" class="form-saida-manual">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="saida_manual">
+                        <input type="hidden" name="registro_id" value="{{ registro.id }}">
+                        <input type="text" name="motivo_saida" maxlength="255" placeholder="Motivo (opcional)" aria-label="Motivo da saída de {{ registro.placa_exibicao }}">
+                        <button type="submit">Registrar saída</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="tabela-vazia">Nenhum veículo dentro do estacionamento.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<section class="painel">
+    <h2>Abertura avulsa (sem registro de acesso)</h2>
+    <p>Só abre a cancela, sem registrar entrada ou saída de veículo (ex.: ambulância, emergência). Fica registrado quem abriu e o motivo.</p>
     <form method="post" class="form-vagas">
         {% csrf_token %}
         <input type="hidden" name="acao" value="manual">
@@ -71,15 +185,11 @@
             <label for="motivo">Motivo (obrigatório)</label>
             <input type="text" id="motivo" name="motivo" maxlength="255" required>
         </div>
-        <button type="submit">Abrir cancela manualmente</button>
+        <button type="submit">Abrir cancela</button>
     </form>
 
-    {% if sucesso_manual %}
-    <p style="margin-top:12px;padding:12px;border:1px solid #2e7d32;border-radius:6px;background:#e8f5e9;color:#1b5e20;">{{ sucesso_manual }}</p>
-    {% endif %}
-    {% if erro_manual %}
-    <p style="margin-top:12px;padding:12px;border:1px solid #c62828;border-radius:6px;background:#ffebee;color:#b71c1c;">{{ erro_manual }}</p>
-    {% endif %}
+    {% if sucesso_manual %}<p class="aviso aviso--sucesso">{{ sucesso_manual }}</p>{% endif %}
+    {% if erro_manual %}<p class="aviso aviso--erro">{{ erro_manual }}</p>{% endif %}
 </section>
 
 <section class="painel">

@@ -11,7 +11,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 
 from apps.campuspark_veiculo.models import TipoVeiculo
-from .models import StatusAcesso
+from .models import RegistroAcesso, StatusAcesso
 
 
 def _data_ou_none(texto: str):
@@ -30,6 +30,8 @@ def filtrar_registros(registros, params):
         "busca": params.get("busca", "").strip(),
         "status": params.get("status", ""),
         "tipo": params.get("tipo", ""),
+        "origem": params.get("origem", ""),
+        "liberacao": params.get("liberacao", ""),
     }
     erros = []
 
@@ -47,14 +49,23 @@ def filtrar_registros(registros, params):
         registros = registros.filter(data_entrada__date__lte=fim)
     if filtros["busca"]:
         registros = registros.filter(
-            Q(veiculo__placa__icontains=filtros["busca"])
+            RegistroAcesso.q_placa(filtros["busca"], contem=True)
             | Q(veiculo__aluno__nome_completo__icontains=filtros["busca"])
             | Q(veiculo__aluno__matricula__icontains=filtros["busca"])
+            | Q(nome_visitante__icontains=filtros["busca"])
         )
     if filtros["status"] in StatusAcesso.values:
         registros = registros.filter(status=filtros["status"])
+    if filtros["origem"] == "visitante":
+        registros = registros.filter(veiculo__isnull=True)
+    elif filtros["origem"] == "cadastrado":
+        registros = registros.filter(veiculo__isnull=False)
+    if filtros["liberacao"] == "manual":
+        registros = registros.filter(liberacao_manual=True)
+    elif filtros["liberacao"] == "automatica":
+        registros = registros.filter(liberacao_manual=False)
     if filtros["tipo"] in TipoVeiculo.values:
-        registros = registros.filter(veiculo__tipo=filtros["tipo"])
+        registros = registros.filter(RegistroAcesso.q_tipo(filtros["tipo"]))
 
     return registros, filtros, erros
 
@@ -76,21 +87,25 @@ def _data_hora(dt) -> str:
 
 # Colunas de cada CSV: (cabeçalho, função que extrai o valor do RegistroAcesso).
 COLUNAS_ALUNO = [
-    ("Placa", lambda r: r.veiculo.placa),
+    ("Placa", lambda r: r.placa_exibicao),
     ("Entrada", lambda r: _data_hora(r.data_entrada)),
     ("Saída", lambda r: _data_hora(r.data_saida)),
     ("Status", lambda r: r.get_status_display()),
 ]
 
 COLUNAS_OPERADOR = [
-    ("Aluno", lambda r: r.veiculo.aluno.nome_completo),
-    ("Matrícula", lambda r: r.veiculo.aluno.matricula),
-    ("Placa", lambda r: r.veiculo.placa),
-    ("Tipo", lambda r: r.veiculo.get_tipo_display()),
+    ("Nome", lambda r: r.nome_exibicao),
+    ("Matrícula", lambda r: r.matricula_exibicao),
+    ("Origem", lambda r: "Visitante" if r.eh_visitante else "Cadastrado"),
+    ("Documento (visitante)", lambda r: r.documento_visitante),
+    ("Placa", lambda r: r.placa_exibicao),
+    ("Tipo", lambda r: r.tipo_exibicao),
     ("Entrada", lambda r: _data_hora(r.data_entrada)),
     ("Saída", lambda r: _data_hora(r.data_saida)),
     ("Permanência", lambda r: formatar_permanencia(r.permanencia)),
     ("Status", lambda r: r.get_status_display()),
+    ("Liberação", lambda r: "Manual" if r.liberacao_manual else "Automática"),
+    ("Motivo", lambda r: r.motivo),
     ("Operador", lambda r: r.operador.nome_completo if r.operador else ""),
 ]
 
