@@ -43,7 +43,10 @@
 {% endif %}
 
 <section class="painel">
-    <h2>Histórico de Entrada e Saída</h2>
+    <div class="painel-cabecalho">
+        <h2>Últimos acessos</h2>
+        <a href="{% url 'historico-acessos' %}">Ver histórico completo</a>
+    </div>
     <table class="tabela-historico">
         <thead>
             <tr>

@@ -1,9 +1,12 @@
+from datetime import datetime
 from unittest.mock import patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
+from apps.campuspark_acesso.models import RegistroAcesso
 from apps.campuspark_biometria.services import RostoNaoDetectado
 from apps.campuspark_veiculo.models import Veiculo
 from .models import Aluno
@@ -311,3 +314,44 @@ class MeusVeiculosViewTest(TestCase):
         resp = self.client.get(self.url)
         self.assertContains(resp, "AAA-1111")
         self.assertNotContains(resp, "BBB-2222")
+
+
+class RelatorioMensalViewTest(TestCase):
+    """CSV do aluno (usuario/pages.py::relatorio_mensal_view)."""
+
+    def setUp(self):
+        self.aluno = criar_aluno()
+        outro = criar_aluno(matricula="7654321", cpf="22222222222", email="outro@catolicasc.org")
+        meu = Veiculo.objects.create(aluno=self.aluno, placa="AAA1111", tipo="carro")
+        alheio = Veiculo.objects.create(aluno=outro, placa="BBB2222", tipo="carro")
+        tz = timezone.get_current_timezone()
+        for veiculo, entrada in [
+            (meu, datetime(2026, 9, 15, 8, 0, tzinfo=tz)),
+            (meu, timezone.now()),
+            (alheio, timezone.now()),
+        ]:
+            registro = RegistroAcesso.objects.create(veiculo=veiculo)
+            RegistroAcesso.objects.filter(pk=registro.pk).update(data_entrada=entrada)
+
+        self.client.post(reverse("login"), {"identificador": "1234567", "senha": "senha123"})
+        self.url = reverse("relatorio-mensal")
+
+    def linhas(self, resp):
+        return resp.content.decode("utf-8-sig").strip().splitlines()
+
+    def test_sem_mes_exporta_mes_atual_so_do_aluno(self):
+        linhas = self.linhas(self.client.get(self.url))
+        self.assertEqual(linhas[0], "Placa;Entrada;Saída;Status")
+        self.assertEqual(len(linhas), 2)
+        self.assertTrue(linhas[1].startswith("AAA1111;"))
+
+    def test_mes_escolhido(self):
+        resp = self.client.get(self.url, {"mes": "2026-09"})
+        self.assertIn('filename="relatorio_2026_09.csv"', resp["Content-Disposition"])
+        linhas = self.linhas(resp)
+        self.assertEqual(len(linhas), 2)
+        self.assertIn("15/09/2026 08:00", linhas[1])
+
+    def test_mes_invalido_usa_mes_atual(self):
+        self.assertEqual(len(self.linhas(self.client.get(self.url, {"mes": "2026-13"}))), 2)
+        self.assertEqual(len(self.linhas(self.client.get(self.url, {"mes": "abc"}))), 2)

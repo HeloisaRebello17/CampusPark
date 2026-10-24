@@ -1,0 +1,114 @@
+{% extends "operador/_painel.html" %}
+
+{% block title %}Histórico de Acessos — CampusPark{% endblock %}
+
+{% block painel_conteudo %}
+<h1 class="painel-titulo">Histórico de Acessos<span class="painel-titulo-linha"></span></h1>
+<p class="painel-subtitulo">Entradas e saídas registradas no estacionamento</p>
+
+<section class="painel">
+    <form method="get" class="filtros-historico">
+        <div class="filtro">
+            <label for="data_inicio">De</label>
+            <input type="date" id="data_inicio" name="data_inicio" value="{{ filtros.data_inicio }}">
+        </div>
+        <div class="filtro">
+            <label for="data_fim">Até</label>
+            <input type="date" id="data_fim" name="data_fim" value="{{ filtros.data_fim }}">
+        </div>
+        <div class="filtro filtro--largo">
+            <label for="busca">Placa, aluno ou RA</label>
+            <input type="search" id="busca" name="busca" value="{{ filtros.busca }}" placeholder="Ex: ABC1D23">
+        </div>
+        <div class="filtro">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="">Todos</option>
+                {% for valor, rotulo in status_choices %}
+                    <option value="{{ valor }}" {% if filtros.status == valor %}selected{% endif %}>{{ rotulo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filtro">
+            <label for="tipo">Veículo</label>
+            <select id="tipo" name="tipo">
+                <option value="">Todos</option>
+                {% for valor, rotulo in tipo_choices %}
+                    <option value="{{ valor }}" {% if filtros.tipo == valor %}selected{% endif %}>{{ rotulo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filtros-acoes">
+            <button type="submit">Filtrar</button>
+            <a href="{% url 'historico-acessos' %}" class="filtros-link">Limpar</a>
+            <a href="{% url 'historico-exportar' %}?{{ query_filtros }}" class="filtros-link filtros-link--exportar">Exportar CSV</a>
+        </div>
+    </form>
+
+    {% if erros %}
+    <ul class="erros-filtro">
+        {% for erro in erros %}<li>{{ erro }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+
+    <p class="historico-total">{{ pagina.paginator.count }} registro{{ pagina.paginator.count|pluralize }} encontrado{{ pagina.paginator.count|pluralize }}</p>
+
+    <table class="tabela-historico">
+        <thead>
+            <tr>
+                <th>Placa</th>
+                <th>Tipo</th>
+                <th>Aluno</th>
+                <th>Matrícula</th>
+                <th>Entrada</th>
+                <th>Saída</th>
+                <th>Permanência</th>
+                <th>Status</th>
+                <th>Operador</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for registro in pagina %}
+            <tr>
+                <td>{{ registro.veiculo.placa }}</td>
+                <td>{{ registro.veiculo.get_tipo_display }}</td>
+                <td>{{ registro.veiculo.aluno.nome_completo }}</td>
+                <td>{{ registro.veiculo.aluno.matricula }}</td>
+                <td>{{ registro.data_entrada|date:"d/m/Y H:i" }}</td>
+                <td>{{ registro.data_saida|date:"d/m/Y H:i"|default:"—" }}</td>
+                <td>{{ registro.permanencia_formatada }}</td>
+                <td><span class="status status--{{ registro.status|lower }}">{{ registro.get_status_display }}</span></td>
+                <td>{{ registro.operador.nome_completo|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" class="tabela-vazia">Nenhum registro encontrado para os filtros escolhidos.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if pagina.paginator.num_pages > 1 %}
+    <div class="paginacao">
+        <span class="paginacao-info">
+            Mostrando {{ pagina.start_index }}-{{ pagina.end_index }} de {{ pagina.paginator.count }} registros
+        </span>
+        <div class="paginacao-paginas">
+            {% if pagina.has_previous %}
+                <a href="?pagina={{ pagina.previous_page_number }}&{{ query_filtros }}">&lt;</a>
+            {% endif %}
+            {% for numero in paginas %}
+                {% if numero == pagina.paginator.ELLIPSIS %}
+                    <span class="paginacao-reticencias">…</span>
+                {% else %}
+                    <a href="?pagina={{ numero }}&{{ query_filtros }}" class="{% if numero == pagina.number %}ativo{% endif %}">{{ numero }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if pagina.has_next %}
+                <a href="?pagina={{ pagina.next_page_number }}&{{ query_filtros }}">&gt;</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

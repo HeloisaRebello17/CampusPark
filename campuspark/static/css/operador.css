@@ -657,3 +657,113 @@
     font-size: 12px;
     letter-spacing: 0.05em;
 }
+
+/* --- Histórico de acessos --- */
+
+.painel-cabecalho {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.painel-cabecalho a {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--vermelho);
+    text-decoration: none;
+}
+
+.filtros-historico {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.filtro {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 140px;
+}
+
+.filtro--largo {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filtro label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.filtro input,
+.filtro select {
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: var(--campo-fundo);
+    font-size: 13px;
+    color: var(--texto);
+}
+
+.filtros-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.filtros-acoes button,
+.filtros-link {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.filtros-acoes button {
+    background: var(--vermelho);
+    color: var(--branco);
+}
+
+.filtros-acoes button:hover {
+    background: var(--vermelho-escuro);
+}
+
+.filtros-link {
+    background: var(--cinza-fundo);
+    color: var(--texto);
+}
+
+.filtros-link--exportar {
+    color: var(--azul);
+}
+
+.erros-filtro {
+    color: var(--vermelho);
+    font-size: 13px;
+    margin: 0 0 12px;
+    padding-left: 18px;
+}
+
+.historico-total {
+    font-size: 12px;
+    color: var(--texto-suave);
+    margin: 0 0 8px;
+}
+
+.paginacao-reticencias {
+    align-self: center;
+    color: var(--texto-suave);
+    font-size: 12px;
+}

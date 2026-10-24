@@ -1,7 +1,9 @@
 from apps.campuspark_usuario.models import Aluno
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
 from django.utils.decorators import method_decorator
+from django.utils import timezone
 from django.views import View
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -9,6 +11,7 @@ from rest_framework import status
 
 from apps.campuspark_veiculo.models import TipoVeiculo
 from core.permissions import operador_login_required, administrador_required
+from .historico import COLUNAS_OPERADOR, filtrar_registros, formatar_permanencia, resposta_csv
 from .services import AcessoService, AcessoNegado, anunciar_rosto, anunciar_acesso
 from .serializers import RegistroAcessoSerializer
 from .models import (
@@ -31,7 +34,7 @@ class DashboardView(View):
         historico = (
             RegistroAcesso.objects
             .select_related("veiculo", "veiculo__aluno", "operador")
-            .order_by("-data_entrada")[:50]
+            .order_by("-data_entrada")[:10]
         )
         context = {
             "operador": request.operador,
@@ -44,6 +47,54 @@ class DashboardView(View):
             "historico": historico,
         }
         return render(request, self.template_name, context)
+
+
+def _historico_filtrado(request):
+    registros = (
+        RegistroAcesso.objects
+        .select_related("veiculo", "veiculo__aluno", "operador")
+        .order_by("-data_entrada")
+    )
+    return filtrar_registros(registros, request.GET)
+
+
+@method_decorator(operador_login_required, name="dispatch")
+class HistoricoAcessosView(View):
+    """Histórico completo de acessos com filtros (RF10, RF12)."""
+
+    template_name = "operador/historico.html"
+
+    def get(self, request):
+        registros, filtros, erros = _historico_filtrado(request)
+        pagina = Paginator(registros, 25).get_page(request.GET.get("pagina"))
+        for registro in pagina:
+            registro.permanencia_formatada = formatar_permanencia(registro.permanencia)
+
+        # Mesma query string (sem a página) para a paginação e a exportação.
+        params = request.GET.copy()
+        params.pop("pagina", None)
+
+        return render(request, self.template_name, {
+            "operador": request.operador,
+            "secao": "historico",
+            "pagina": pagina,
+            "paginas": pagina.paginator.get_elided_page_range(pagina.number, on_each_side=2, on_ends=1),
+            "filtros": filtros,
+            "erros": erros,
+            "query_filtros": params.urlencode(),
+            "status_choices": StatusAcesso.choices,
+            "tipo_choices": TipoVeiculo.choices,
+        })
+
+
+@method_decorator(operador_login_required, name="dispatch")
+class ExportarHistoricoView(View):
+    """Exporta em CSV o histórico com os mesmos filtros da tela."""
+
+    def get(self, request):
+        registros, _, _ = _historico_filtrado(request)
+        nome = f"historico_acessos_{timezone.localtime():%Y%m%d_%H%M}.csv"
+        return resposta_csv(registros, nome, COLUNAS_OPERADOR)
 
 
 @method_decorator(administrador_required, name="dispatch")

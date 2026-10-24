@@ -1,13 +1,12 @@
-import csv
 import re
 from functools import wraps
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
-from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.utils import timezone
 
+from apps.campuspark_acesso.historico import COLUNAS_ALUNO, resposta_csv
 from apps.campuspark_acesso.models import RegistroAcesso, StatusAcesso
 from apps.campuspark_biometria.services import BiometriaService, RostoNaoDetectado
 from apps.campuspark_veiculo.models import TipoVeiculo, Veiculo
@@ -219,36 +218,34 @@ def dashboard_view(request):
         "veiculos_no_campus": len(dentro_ids),
         "ultimo_registro": ultimo_registro,
         "mes_atual": mes_atual,
+        "mes_input": f"{agora.year}-{agora.month:02d}",
         "registros_mes": registros_mes,
     })
 
 
+def _mes_do_relatorio(texto: str):
+    """Lê o mês escolhido ('AAAA-MM'); vazio ou inválido vira o mês atual."""
+    agora = timezone.localtime()
+    try:
+        ano, mes = (int(parte) for parte in texto.split("-"))
+        if 1 <= mes <= 12 and 2000 <= ano <= agora.year:
+            return ano, mes
+    except ValueError:
+        pass
+    return agora.year, agora.month
+
+
 @aluno_required
 def relatorio_mensal_view(request):
-    """Exporta em CSV os acessos (entrada/saida) do mes atual do aluno logado."""
-    agora = timezone.localtime()
-    veiculos = Veiculo.objects.filter(aluno=request.aluno)
+    """Exporta em CSV os acessos (entrada/saida) do mes escolhido (padrao: mes atual) do aluno logado."""
+    ano, mes = _mes_do_relatorio(request.GET.get("mes", ""))
     registros = (
         RegistroAcesso.objects
-        .filter(veiculo__in=veiculos, data_entrada__year=agora.year, data_entrada__month=agora.month)
+        .filter(veiculo__aluno=request.aluno, data_entrada__year=ano, data_entrada__month=mes)
         .select_related("veiculo")
         .order_by("data_entrada")
     )
-
-    nome_arquivo = f"relatorio_{agora.year}_{agora.month:02d}.csv"
-    response = HttpResponse(content_type="text/csv; charset=utf-8-sig")
-    response["Content-Disposition"] = f'attachment; filename="{nome_arquivo}"'
-
-    writer = csv.writer(response, delimiter=";")
-    writer.writerow(["Placa", "Entrada", "Saída", "Status"])
-    for registro in registros:
-        writer.writerow([
-            registro.veiculo.placa,
-            timezone.localtime(registro.data_entrada).strftime("%d/%m/%Y %H:%M"),
-            timezone.localtime(registro.data_saida).strftime("%d/%m/%Y %H:%M") if registro.data_saida else "",
-            registro.get_status_display(),
-        ])
-    return response
+    return resposta_csv(registros, f"relatorio_{ano}_{mes:02d}.csv", COLUNAS_ALUNO)
 
 
 @aluno_required
