@@ -8,12 +8,14 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from apps.campuspark_usuario.models import Aluno
+from core.permissions import DispositivoAutorizado, OperadorAutenticado
 from .serializers import CadastroFacialSerializer, ReconhecimentoFacialSerializer
 from .services import BiometriaService, RostoNaoDetectado
 
 
 class CadastroFacialView(APIView):
-    """Recebe 1+ fotos de um aluno ja cadastrado e salva o(s) embedding(s) do rosto."""
+    """Recebe 1+ fotos de um aluno ja cadastrado e salva o(s) embedding(s) do rosto.
+    Restrito a administrador (permissao padrao da API)."""
 
     def post(self, request):
         serializer = CadastroFacialSerializer(data=request.data)
@@ -46,6 +48,8 @@ class ReconhecimentoFacialView(APIView):
     identificar o aluno. Sempre responde 200 -- 'reconhecido: false' NAO e erro,
     e um resultado esperado (rosto nao bateu com ninguem cadastrado).
     """
+
+    permission_classes = [OperadorAutenticado | DispositivoAutorizado]
 
     def post(self, request):
         serializer = ReconhecimentoFacialSerializer(data=request.data)

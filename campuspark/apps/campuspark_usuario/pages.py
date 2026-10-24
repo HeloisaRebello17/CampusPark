@@ -4,7 +4,6 @@ from functools import wraps
 from django.conf import settings
 from django.contrib import messages
 from django.db import IntegrityError, transaction
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.views.decorators.http import require_POST

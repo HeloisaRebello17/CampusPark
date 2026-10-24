@@ -10,7 +10,9 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from apps.campuspark_veiculo.models import TipoVeiculo
-from core.permissions import operador_login_required, administrador_required
+from core.permissions import (
+    operador_login_required, administrador_required, OperadorAutenticado, DispositivoAutorizado,
+)
 from .historico import COLUNAS_OPERADOR, filtrar_registros, formatar_permanencia, resposta_csv
 from .services import AcessoService, AcessoNegado, anunciar_rosto, anunciar_acesso
 from .serializers import RegistroAcessoSerializer
@@ -205,6 +207,8 @@ class CancelaView(View):
 
 
 class EntradaView(APIView):
+    permission_classes = [OperadorAutenticado | DispositivoAutorizado]
+
     def post(self, request):
         tag = request.data.get("tag_rfid")
         aluno_id = request.data.get("aluno_id")  # vem do reconhecimento facial (Thomas)
@@ -226,6 +230,8 @@ class EntradaView(APIView):
 
 
 class SaidaView(APIView):
+    permission_classes = [OperadorAutenticado | DispositivoAutorizado]
+
     def post(self, request):
         tag = request.data.get("tag_rfid")
         try:
