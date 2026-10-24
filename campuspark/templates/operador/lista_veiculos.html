@@ -1,0 +1,119 @@
+{% extends "operador/_painel.html" %}
+
+{% block title %}Veículos — CampusPark{% endblock %}
+
+{% block painel_conteudo %}
+<h1 class="painel-titulo">Gestão de Veículos<span class="painel-titulo-linha"></span></h1>
+<p class="painel-subtitulo">Autorização de acesso dos veículos cadastrados</p>
+
+<section class="cards">
+    <div class="card">
+        <span class="card-titulo">Total Veículos</span>
+        <span class="card-valor">{{ total_veiculos }}</span>
+    </div>
+    <div class="card">
+        <span class="card-titulo">Autorizados</span>
+        <span class="card-valor">{{ total_autorizados }}</span>
+    </div>
+    <div class="card card--destaque">
+        <span class="card-titulo">Bloqueados</span>
+        <span class="card-valor">{{ total_bloqueados }}</span>
+    </div>
+</section>
+
+<section class="painel">
+    <form method="get" class="barra-filtros">
+        <select name="autorizacao" onchange="this.form.submit()">
+            <option value="" {% if not autorizacao %}selected{% endif %}>Situação: Todos</option>
+            <option value="autorizado" {% if autorizacao == "autorizado" %}selected{% endif %}>Situação: Autorizado</option>
+            <option value="bloqueado" {% if autorizacao == "bloqueado" %}selected{% endif %}>Situação: Bloqueado</option>
+        </select>
+        <input type="search" name="busca" value="{{ busca }}" placeholder="Buscar placa, aluno ou RA...">
+        <button type="submit">Buscar</button>
+    </form>
+
+    <table class="tabela-alunos">
+        <thead>
+            <tr>
+                <th>Placa / Veículo</th>
+                <th>Aluno</th>
+                <th>Situação</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for veiculo in pagina %}
+            <tr>
+                <td>
+                    <div class="veiculo-placa">{{ veiculo.placa }}</div>
+                    <div class="aluno-ra">
+                        {{ veiculo.get_tipo_display }}{% if veiculo.fabricante or veiculo.modelo %} · {{ veiculo.fabricante }} {{ veiculo.modelo }}{% endif %}
+                    </div>
+                </td>
+                <td>
+                    <strong>{{ veiculo.aluno.nome_completo }}</strong>
+                    <div class="aluno-ra">RA: {{ veiculo.aluno.matricula }}</div>
+                </td>
+                <td>
+                    <div class="situacao-coluna">
+                    <span class="status status--{{ veiculo.autorizado|yesno:'ativo,inativo' }}">
+                        {{ veiculo.autorizado|yesno:"Autorizado,Bloqueado" }}
+                    </span>
+                    {% if veiculo.no_estacionamento %}
+                        <span class="status status--dentro">No estacionamento</span>
+                    {% endif %}
+                    </div>
+                </td>
+                <td>
+                    <div class="acoes-linha">
+                        <form method="post" action="{% url 'veiculo-autorizacao' veiculo.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            {% if veiculo.autorizado %}
+                                <input type="hidden" name="autorizado" value="0">
+                                <button type="submit" class="botao-acao botao-acao--neutro">Bloquear</button>
+                            {% else %}
+                                <input type="hidden" name="autorizado" value="1">
+                                <button type="submit" class="botao-acao">Autorizar</button>
+                            {% endif %}
+                        </form>
+                        {% if operador.is_administrador and not veiculo.no_estacionamento %}
+                            <a class="botao-acao botao-acao--neutro" href="{% url 'editar-veiculo' veiculo.id %}">Editar</a>
+                            <form method="post" action="{% url 'excluir-veiculo' veiculo.id %}"
+                                  onsubmit="return confirm('Excluir o veículo {{ veiculo.placa }}? Essa ação não pode ser desfeita.');">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="botao-acao botao-acao--perigo">Excluir</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="tabela-vazia">Nenhum veículo encontrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if pagina.paginator.num_pages > 1 %}
+    <div class="paginacao">
+        <span class="paginacao-info">
+            Mostrando {{ pagina.start_index }}-{{ pagina.end_index }} de {{ pagina.paginator.count }} veículos
+        </span>
+        <div class="paginacao-paginas">
+            {% if pagina.has_previous %}
+                <a href="?pagina={{ pagina.previous_page_number }}&busca={{ busca|urlencode }}&autorizacao={{ autorizacao }}">&lt;</a>
+            {% endif %}
+            {% for numero in pagina.paginator.page_range %}
+                <a href="?pagina={{ numero }}&busca={{ busca|urlencode }}&autorizacao={{ autorizacao }}" class="{% if numero == pagina.number %}ativo{% endif %}">{{ numero }}</a>
+            {% endfor %}
+            {% if pagina.has_next %}
+                <a href="?pagina={{ pagina.next_page_number }}&busca={{ busca|urlencode }}&autorizacao={{ autorizacao }}">&gt;</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

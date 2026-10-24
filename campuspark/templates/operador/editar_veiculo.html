@@ -1,0 +1,47 @@
+{% extends "operador/_painel.html" %}
+
+{% block title %}Editar Veículo — CampusPark{% endblock %}
+
+{% block painel_conteudo %}
+<h1 class="painel-titulo">Editar Veículo<span class="painel-titulo-linha"></span></h1>
+<p class="painel-subtitulo">{{ veiculo.aluno.nome_completo }} — RA {{ veiculo.aluno.matricula }}</p>
+
+<section class="painel painel--estreito">
+    <form method="post" class="form-edicao">
+        {% csrf_token %}
+        <label for="placa">Placa</label>
+        <input type="text" id="placa" name="placa" value="{{ veiculo.placa }}" maxlength="8" required>
+
+        <label for="tipo">Tipo</label>
+        <select id="tipo" name="tipo">
+            {% for valor, rotulo in tipos %}
+                <option value="{{ valor }}" {% if valor == veiculo.tipo %}selected{% endif %}>{{ rotulo }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="fabricante">Fabricante</label>
+        <input type="text" id="fabricante" name="fabricante" value="{{ veiculo.fabricante }}" maxlength="30">
+
+        <label for="modelo">Modelo</label>
+        <input type="text" id="modelo" name="modelo" value="{{ veiculo.modelo }}" maxlength="30">
+
+        <label for="cor">Cor</label>
+        <input type="text" id="cor" name="cor" value="{{ veiculo.cor }}" maxlength="20">
+
+        <label class="form-checkbox">
+            <input type="checkbox" name="seguro_ativo" {% if veiculo.seguro_ativo %}checked{% endif %}>
+            Possui seguro ativo
+        </label>
+
+        <label class="form-checkbox">
+            <input type="checkbox" name="autorizado" {% if veiculo.autorizado %}checked{% endif %}>
+            Veículo autorizado a acessar o estacionamento
+        </label>
+
+        <div class="form-acoes">
+            <a href="{% url 'lista-veiculos' %}" class="botao-secundario">Cancelar</a>
+            <button type="submit">Salvar alterações</button>
+        </div>
+    </form>
+</section>
+{% endblock %}
