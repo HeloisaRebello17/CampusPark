@@ -74,7 +74,11 @@ DJANGO_DEBUG=True
 DJANGO_SETTINGS_MODULE=config.settings
 DATABASE_URL=postgresql://usuario:senha@host:5432/nome_do_banco?sslmode=require
 ALLOWED_HOSTS=localhost,127.0.0.1
+CAMPUSPARK_API_KEY=
 ```
+
+> `CAMPUSPARK_API_KEY` só é necessária para equipamentos (cancela, leitor RFID, câmera) chamarem
+> a API sem login, enviando o header `X-API-Key`. Deixe vazia se não houver equipamento ligado.
 
 > O `.env` contém a senha do banco: **nunca** faça commit dele nem o envie para terceiros.
 > Ele já está no `.gitignore`.

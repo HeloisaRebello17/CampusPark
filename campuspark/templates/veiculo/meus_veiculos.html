@@ -47,6 +47,14 @@
               <div class="my-vehicle-type">{% if veiculo.cor %}{{ veiculo.cor }} • {% endif %}{{ veiculo.get_tipo_display }}</div>
             </div>
           </div>
+          <div class="my-vehicle-actions">
+            <a href="{% url 'veiculo-editar' veiculo.id %}" class="btn btn-outline my-vehicle-action">Editar</a>
+            <form method="post" action="{% url 'veiculo-excluir' veiculo.id %}"
+                  onsubmit="return confirm('Remover o veículo {{ veiculo.placa }}? Essa ação não pode ser desfeita.');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger-ghost my-vehicle-action">Excluir</button>
+            </form>
+          </div>
         </div>
         {% endfor %}
       </div>

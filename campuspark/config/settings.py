@@ -46,6 +46,15 @@ DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 _allowed_hosts = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts.split(",") if h.strip()]
 
+# Chave dos equipamentos (cancela, leitor RFID, camera) para chamar a API sem login,
+# enviada no header X-API-Key. Vazia = nenhum equipamento aceito.
+CAMPUSPARK_API_KEY = os.getenv("CAMPUSPARK_API_KEY", "")
+
+# API fechada por padrao (RNF01, RNF14): so administrador, a menos que a view libere mais.
+REST_FRAMEWORK = {
+    "DEFAULT_PERMISSION_CLASSES": ["core.permissions.AdministradorAutenticado"],
+}
+
 
 # Application definition
 

@@ -119,6 +119,16 @@
   margin-bottom: 18px;
 }
 
+.report-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-form .btn {
+  margin-top: 4px;
+}
+
 .visit-card {
   display: flex;
   align-items: flex-start;

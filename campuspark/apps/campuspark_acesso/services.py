@@ -1,6 +1,9 @@
+import re
+
 from django.db import transaction
 from django.utils import timezone
 from apps.campuspark_veiculo.models import Veiculo, TipoVeiculo
+from apps.campuspark_veiculo.validators import PLACA_REGEX
 from integrations.cancela import Cancela
 from .models import (
     RegistroAcesso, StatusAcesso, ConfiguracaoEstacionamento,
@@ -28,10 +31,35 @@ def anunciar_acesso(registro: RegistroAcesso, sentido: str) -> None:
     """Mensagem de terminal simulando a tela de 'acesso autorizado'."""
     rotulo = "Entrada" if sentido == SentidoAbertura.ENTRADA else "Saida"
     print(
-        f"[ACESSO AUTORIZADO] {rotulo} | Placa {registro.veiculo.placa} | "
+        f"[ACESSO AUTORIZADO] {rotulo} | Placa {registro.placa_exibicao} | "
         f"Entrada: {_formatar_data(registro.data_entrada)} | "
         f"Saida: {_formatar_data(registro.data_saida)}"
     )
+
+
+def normalizar_placa(texto: str) -> str:
+    return re.sub(r"[^A-Za-z0-9]", "", texto or "").upper()
+
+
+def vagas_ocupadas(tipo) -> int:
+    """Veículos dentro do estacionamento por tipo, cadastrados e visitantes."""
+    return RegistroAcesso.objects.filter(RegistroAcesso.q_tipo(tipo), status=StatusAcesso.DENTRO).count()
+
+
+def _garantir_vaga(tipo) -> None:
+    config = ConfiguracaoEstacionamento.obter()
+    capacidade = {TipoVeiculo.CARRO: config.vagas_carro, TipoVeiculo.MOTO: config.vagas_moto}.get(tipo)
+    if capacidade is not None and vagas_ocupadas(tipo) >= capacidade:
+        raise AcessoNegado("Não há vagas disponíveis para este tipo de veículo.")
+
+
+def _validar_motivo(motivo: str) -> str:
+    motivo = (motivo or "").strip()
+    if not motivo:
+        raise AcessoNegado("Informe o motivo da liberação manual.")
+    if len(motivo) > 255:
+        raise AcessoNegado("O motivo deve ter no máximo 255 caracteres.")
+    return motivo
 
 
 class AcessoService:
@@ -67,19 +95,7 @@ class AcessoService:
         if ja_dentro:
             raise AcessoNegado("Este veículo já possui uma entrada em aberto.")
 
-        config = ConfiguracaoEstacionamento.obter()
-        capacidade = None
-        if veiculo.tipo == TipoVeiculo.CARRO:
-            capacidade = config.vagas_carro
-        elif veiculo.tipo == TipoVeiculo.MOTO:
-            capacidade = config.vagas_moto
-
-        if capacidade is not None:
-            ocupadas = RegistroAcesso.objects.filter(
-                status=StatusAcesso.DENTRO, veiculo__tipo=veiculo.tipo
-            ).count()
-            if ocupadas >= capacidade:
-                raise AcessoNegado("Não há vagas disponíveis para este tipo de veículo.")
+        _garantir_vaga(veiculo.tipo)
 
         with transaction.atomic():
             registro = RegistroAcesso.objects.create(veiculo=veiculo, operador=operador)
@@ -130,19 +146,15 @@ class AcessoService:
 
     @staticmethod
     def liberar_manual(operador, sentido: str, motivo: str, placa: str = "") -> AberturaCancela:
-        """Abertura manual da cancela por um operador logado. Só abre e registra (quem, quando, motivo);
-        não cria nem finaliza RegistroAcesso."""
-        motivo = (motivo or "").strip()
+        """Abertura avulsa da cancela (ex.: emergência). Só abre e registra (quem, quando, motivo);
+        não cria nem finaliza RegistroAcesso — para isso use entrada_manual/saida_manual."""
         placa = (placa or "").strip().upper()
 
         if operador is None:
             raise AcessoNegado("A liberação manual exige um operador autenticado.")
         if sentido not in SentidoAbertura.values:
             raise AcessoNegado("Sentido inválido. Escolha entrada ou saída.")
-        if not motivo:
-            raise AcessoNegado("Informe o motivo da liberação manual.")
-        if len(motivo) > 255:
-            raise AcessoNegado("O motivo deve ter no máximo 255 caracteres.")
+        motivo = _validar_motivo(motivo)
         if len(placa) > 7:
             raise AcessoNegado("Placa inválida: use no máximo 7 caracteres.")
 

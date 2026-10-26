@@ -1,15 +1,20 @@
 from apps.campuspark_usuario.models import Aluno
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
 from django.utils.decorators import method_decorator
+from django.utils import timezone
 from django.views import View
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
 from apps.campuspark_veiculo.models import TipoVeiculo
-from core.permissions import operador_login_required, administrador_required
-from .services import AcessoService, AcessoNegado, anunciar_rosto, anunciar_acesso
+from core.permissions import (
+    operador_login_required, administrador_required, OperadorAutenticado, DispositivoAutorizado,
+)
+from .historico import COLUNAS_OPERADOR, filtrar_registros, formatar_permanencia, resposta_csv
+from .services import AcessoService, AcessoNegado, anunciar_rosto, anunciar_acesso, vagas_ocupadas
 from .serializers import RegistroAcessoSerializer
 from .models import (
     RegistroAcesso, StatusAcesso, ConfiguracaoEstacionamento,
@@ -25,13 +30,12 @@ class DashboardView(View):
 
     def get(self, request):
         config = ConfiguracaoEstacionamento.obter()
-        dentro = RegistroAcesso.objects.filter(status=StatusAcesso.DENTRO).select_related("veiculo")
-        carros_dentro = dentro.filter(veiculo__tipo=TipoVeiculo.CARRO).count()
-        motos_dentro = dentro.filter(veiculo__tipo=TipoVeiculo.MOTO).count()
+        carros_dentro = vagas_ocupadas(TipoVeiculo.CARRO)
+        motos_dentro = vagas_ocupadas(TipoVeiculo.MOTO)
         historico = (
             RegistroAcesso.objects
             .select_related("veiculo", "veiculo__aluno", "operador")
-            .order_by("-data_entrada")[:50]
+            .order_by("-data_entrada")[:10]
         )
         context = {
             "operador": request.operador,
@@ -44,6 +48,54 @@ class DashboardView(View):
             "historico": historico,
         }
         return render(request, self.template_name, context)
+
+
+def _historico_filtrado(request):
+    registros = (
+        RegistroAcesso.objects
+        .select_related("veiculo", "veiculo__aluno", "operador")
+        .order_by("-data_entrada")
+    )
+    return filtrar_registros(registros, request.GET)
+
+
+@method_decorator(operador_login_required, name="dispatch")
+class HistoricoAcessosView(View):
+    """Histórico completo de acessos com filtros (RF10, RF12)."""
+
+    template_name = "operador/historico.html"
+
+    def get(self, request):
+        registros, filtros, erros = _historico_filtrado(request)
+        pagina = Paginator(registros, 25).get_page(request.GET.get("pagina"))
+        for registro in pagina:
+            registro.permanencia_formatada = formatar_permanencia(registro.permanencia)
+
+        # Mesma query string (sem a página) para a paginação e a exportação.
+        params = request.GET.copy()
+        params.pop("pagina", None)
+
+        return render(request, self.template_name, {
+            "operador": request.operador,
+            "secao": "historico",
+            "pagina": pagina,
+            "paginas": pagina.paginator.get_elided_page_range(pagina.number, on_each_side=2, on_ends=1),
+            "filtros": filtros,
+            "erros": erros,
+            "query_filtros": params.urlencode(),
+            "status_choices": StatusAcesso.choices,
+            "tipo_choices": TipoVeiculo.choices,
+        })
+
+
+@method_decorator(operador_login_required, name="dispatch")
+class ExportarHistoricoView(View):
+    """Exporta em CSV o histórico com os mesmos filtros da tela."""
+
+    def get(self, request):
+        registros, _, _ = _historico_filtrado(request)
+        nome = f"historico_acessos_{timezone.localtime():%Y%m%d_%H%M}.csv"
+        return resposta_csv(registros, nome, COLUNAS_OPERADOR)
 
 
 @method_decorator(administrador_required, name="dispatch")
@@ -70,8 +122,8 @@ class AtualizarVagasView(View):
 
 @method_decorator(operador_login_required, name="dispatch")
 class CancelaView(View):
-    """Controle da cancela: simulação da liberação automática (TAG + rosto), liberação manual
-    pelo operador e histórico das últimas aberturas."""
+    """Controle da cancela: simulação da liberação automática (TAG + rosto), entrada/saída manual
+    pelo operador (aluno cadastrado ou visitante), abertura avulsa e histórico das aberturas."""
 
     template_name = "operador/cancela.html"
 
@@ -80,6 +132,11 @@ class CancelaView(View):
             AberturaCancela.objects
             .select_related("veiculo", "operador")
             .order_by("-data_hora")[:30]
+        )
+        dentro = (
+            RegistroAcesso.objects.filter(status=StatusAcesso.DENTRO)
+            .select_related("veiculo", "veiculo__aluno")
+            .order_by("-data_entrada")
         )
         context = {
             "operador": request.operador,
@@ -91,12 +148,19 @@ class CancelaView(View):
         return context
 
     def get(self, request):
-        return render(request, self.template_name, self._contexto(request))
+        extra = {}
+        if "placa" in request.GET:
+            extra["consulta"] = self._consultar(request.GET.get("placa", ""))
+        return render(request, self.template_name, self._contexto(request, **extra))
 
     def post(self, request):
         acao = request.POST.get("acao")
         if acao == "simular":
             return self._simular(request)
+        if acao == "entrada_manual":
+            return self._entrada_manual(request)
+        if acao == "saida_manual":
+            return self._saida_manual(request)
         if acao == "manual":
             return self._manual(request)
         if acao == "face_saida":
@@ -178,6 +242,8 @@ def _aluno_reconhecido(request):
 
 
 class EntradaView(APIView):
+    permission_classes = [OperadorAutenticado | DispositivoAutorizado]
+
     def post(self, request):
         tag = request.data.get("tag_rfid")
         try:
@@ -193,6 +259,8 @@ class EntradaView(APIView):
 
 
 class SaidaView(APIView):
+    permission_classes = [OperadorAutenticado | DispositivoAutorizado]
+
     def post(self, request):
         tag = request.data.get("tag_rfid")
         try:

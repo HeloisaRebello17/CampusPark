@@ -7,7 +7,8 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.decorators import method_decorator
 from django.views import View
 
-from apps.campuspark_acesso.models import ConfiguracaoEstacionamento, RegistroAcesso, StatusAcesso
+from apps.campuspark_acesso.models import ConfiguracaoEstacionamento
+from apps.campuspark_acesso.services import vagas_ocupadas
 from apps.campuspark_veiculo.models import TipoVeiculo, Veiculo
 from core.permissions import administrador_required, get_operador_logado, operador_login_required
 from core.utils import somente_numeros
@@ -56,9 +57,8 @@ class OperadorLogoutView(View):
 
 def _vagas_livres_total() -> int:
     config = ConfiguracaoEstacionamento.obter()
-    dentro = RegistroAcesso.objects.filter(status=StatusAcesso.DENTRO)
-    carros_dentro = dentro.filter(veiculo__tipo=TipoVeiculo.CARRO).count()
-    motos_dentro = dentro.filter(veiculo__tipo=TipoVeiculo.MOTO).count()
+    carros_dentro = vagas_ocupadas(TipoVeiculo.CARRO)
+    motos_dentro = vagas_ocupadas(TipoVeiculo.MOTO)
     return max(config.vagas_carro - carros_dentro, 0) + max(config.vagas_moto - motos_dentro, 0)
 
 
