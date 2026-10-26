@@ -9,7 +9,7 @@ class RegistroAcessoAdmin(admin.ModelAdmin):
 
 @admin.register(ConfiguracaoEstacionamento)
 class ConfiguracaoEstacionamentoAdmin(admin.ModelAdmin):
-    list_display = ("vagas_carro", "vagas_moto", "atualizado_em")
+    list_display = ("vagas_carro", "vagas_moto", "exigir_face_saida", "atualizado_em")
 
 
 @admin.register(AberturaCancela)

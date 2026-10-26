@@ -91,13 +91,19 @@ class AcessoService:
         return registro
 
     @staticmethod
-    def registrar_saida(tag_rfid: str) -> RegistroAcesso:
-        registro = RegistroAcesso.objects.select_related("veiculo").filter(
+    def registrar_saida(tag_rfid: str, aluno_reconhecido=None) -> RegistroAcesso:
+        registro = RegistroAcesso.objects.select_related("veiculo", "veiculo__aluno").filter(
             veiculo__tag_rfid=tag_rfid, status=StatusAcesso.DENTRO
         ).order_by("-data_entrada").first()
 
         if not registro:
             raise AcessoNegado("Não há entrada em aberto para esta TAG.")
+
+        if aluno_reconhecido is None:
+            if ConfiguracaoEstacionamento.obter().exigir_face_saida:
+                raise AcessoNegado("A saída exige o reconhecimento facial do aluno.")
+        elif aluno_reconhecido.id != registro.veiculo.aluno_id:
+            raise AcessoNegado("O rosto reconhecido não corresponde ao aluno vinculado a esta TAG.")
 
         with transaction.atomic():
             registro.data_saida = timezone.now()
@@ -109,6 +115,18 @@ class AcessoService:
                 veiculo=registro.veiculo, registro=registro,
             )
         return registro
+
+    @staticmethod
+    def definir_face_saida(operador, ativo: bool) -> ConfiguracaoEstacionamento:
+        """Ativa/desativa o módulo de saída pela face. Qualquer operador autenticado pode alterar."""
+        if operador is None:
+            raise AcessoNegado("Alterar o módulo de saída pela face exige um operador autenticado.")
+        config = ConfiguracaoEstacionamento.obter()
+        config.exigir_face_saida = ativo
+        config.save(update_fields=["exigir_face_saida", "atualizado_em"])
+        estado = "ativado" if ativo else "desativado"
+        print(f"[CONFIGURACAO] Saida pela face {estado} por {operador.nome_completo}")
+        return config
 
     @staticmethod
     def liberar_manual(operador, sentido: str, motivo: str, placa: str = "") -> AberturaCancela:

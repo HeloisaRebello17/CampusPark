@@ -85,6 +85,7 @@ class CancelaView(View):
             "operador": request.operador,
             "secao": "cancela",
             "aberturas": aberturas,
+            "config": ConfiguracaoEstacionamento.obter(),
         }
         context.update(extra)
         return context
@@ -98,7 +99,15 @@ class CancelaView(View):
             return self._simular(request)
         if acao == "manual":
             return self._manual(request)
+        if acao == "face_saida":
+            return self._face_saida(request)
         return render(request, self.template_name, self._contexto(request))
+
+    def _face_saida(self, request):
+        ativo = request.POST.get("ativo") == "1"
+        AcessoService.definir_face_saida(request.operador, ativo)
+        extra = {"sucesso_face_saida": "Saída pela face ativada." if ativo else "Saída pela face desativada."}
+        return render(request, self.template_name, self._contexto(request, **extra))
 
     def _simular(self, request):
         tag = request.POST.get("tag_rfid", "").strip()
@@ -107,7 +116,7 @@ class CancelaView(View):
         extra = {"tag_digitada": tag, "matricula_digitada": matricula}
 
         aluno = None
-        if sentido == SentidoAbertura.ENTRADA and matricula:
+        if matricula:
             aluno = Aluno.objects.filter(matricula=matricula).first()
             if aluno is None:
                 extra["erro_auto"] = "Aluno com essa matrícula não foi encontrado."
@@ -116,7 +125,7 @@ class CancelaView(View):
 
         try:
             if sentido == SentidoAbertura.SAIDA:
-                registro = AcessoService.registrar_saida(tag)
+                registro = AcessoService.registrar_saida(tag, aluno_reconhecido=aluno)
             else:
                 sentido = SentidoAbertura.ENTRADA
                 registro = AcessoService.validar_entrada(tag, aluno_reconhecido=aluno)
@@ -153,19 +162,28 @@ class CancelaView(View):
         return render(request, self.template_name, self._contexto(request, **extra))
 
 
+class AlunoReconhecidoInvalido(Exception):
+    pass
+
+
+def _aluno_reconhecido(request):
+    """Aluno identificado pelo reconhecimento facial (campo opcional 'aluno_id'), ou None se não enviado."""
+    aluno_id = request.data.get("aluno_id")  # vem do reconhecimento facial (Thomas)
+    if aluno_id is None:
+        return None
+    aluno = Aluno.objects.filter(pk=aluno_id).first()
+    if aluno is None:
+        raise AlunoReconhecidoInvalido("Aluno reconhecido pela face não encontrado no sistema.")
+    return aluno
+
+
 class EntradaView(APIView):
     def post(self, request):
         tag = request.data.get("tag_rfid")
-        aluno_id = request.data.get("aluno_id")  # vem do reconhecimento facial (Thomas)
-
-        aluno_reconhecido = None
-        if aluno_id is not None:
-            aluno_reconhecido = Aluno.objects.filter(pk=aluno_id).first()
-            if aluno_reconhecido is None:
-                return Response(
-                    {"erro": "Aluno reconhecido pela face não encontrado no sistema."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        try:
+            aluno_reconhecido = _aluno_reconhecido(request)
+        except AlunoReconhecidoInvalido as e:
+            return Response({"erro": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             registro = AcessoService.validar_entrada(tag, aluno_reconhecido=aluno_reconhecido)
@@ -178,7 +196,12 @@ class SaidaView(APIView):
     def post(self, request):
         tag = request.data.get("tag_rfid")
         try:
-            registro = AcessoService.registrar_saida(tag)
+            aluno_reconhecido = _aluno_reconhecido(request)
+        except AlunoReconhecidoInvalido as e:
+            return Response({"erro": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            registro = AcessoService.registrar_saida(tag, aluno_reconhecido=aluno_reconhecido)
         except AcessoNegado as e:
             return Response({"erro": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(RegistroAcessoSerializer(registro).data, status=200)
