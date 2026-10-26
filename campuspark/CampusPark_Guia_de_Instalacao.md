@@ -177,7 +177,11 @@ no Git** — cada pessoa do time cria o seu próprio, localmente.
    DJANGO_SETTINGS_MODULE=config.settings
    DATABASE_URL=<cole aqui a string de conexão que pegou com quem administra o banco>
    ALLOWED_HOSTS=localhost,127.0.0.1
+   CAMPUSPARK_API_KEY=
    ```
+   `CAMPUSPARK_API_KEY` pode ficar vazia: só é usada por equipamentos (cancela, leitor RFID,
+   câmera) que chamam a API sem login, pelo header `X-API-Key`.
+
    O `DATABASE_URL` tem esse formato (exemplo, não use este valor real):
    `postgresql://usuario:senha@host:5432/nome_do_banco?sslmode=require`
 
