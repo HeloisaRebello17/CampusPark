@@ -44,6 +44,47 @@ class AcessoServiceTest(TestCase):
             AcessoService.registrar_saida("TAG1")  # RN06
 
 
+class SaidaPelaFaceTest(TestCase):
+    def setUp(self):
+        liberar_vagas()
+        self.aluno = Aluno.objects.create(
+            matricula="1111111", cpf="44444444444", nome_completo="Dono do Carro",
+            email_institucional="dono@catolicasc.org", senha_hash="x",
+        )
+        self.outro_aluno = Aluno.objects.create(
+            matricula="2222222", cpf="55555555555", nome_completo="Outro Aluno",
+            email_institucional="outro@catolicasc.org", senha_hash="x",
+        )
+        Veiculo.objects.create(aluno=self.aluno, placa="FAC1234", tipo="carro", tag_rfid="TAG3")
+        AcessoService.validar_entrada("TAG3", aluno_reconhecido=self.aluno)
+
+    def ativar_modulo(self, ativo=True):
+        ConfiguracaoEstacionamento.objects.filter(pk=1).update(exigir_face_saida=ativo)
+
+    def test_modulo_desativado_libera_saida_so_com_tag(self):
+        registro = AcessoService.registrar_saida("TAG3")
+        self.assertEqual(registro.status, "FINALIZADO")
+
+    def test_modulo_ativo_exige_rosto(self):
+        self.ativar_modulo()
+        with self.assertRaises(AcessoNegado):
+            AcessoService.registrar_saida("TAG3")
+        self.assertFalse(AberturaCancela.objects.filter(sentido=SentidoAbertura.SAIDA).exists())
+
+    def test_modulo_ativo_libera_com_rosto_do_dono(self):
+        self.ativar_modulo()
+        registro = AcessoService.registrar_saida("TAG3", aluno_reconhecido=self.aluno)
+        self.assertEqual(registro.status, "FINALIZADO")
+        self.assertTrue(AberturaCancela.objects.filter(sentido=SentidoAbertura.SAIDA).exists())
+
+    def test_rosto_de_outro_aluno_nega_saida(self):
+        for ativo in (True, False):
+            self.ativar_modulo(ativo)
+            with self.assertRaises(AcessoNegado):
+                AcessoService.registrar_saida("TAG3", aluno_reconhecido=self.outro_aluno)
+        self.assertFalse(AberturaCancela.objects.filter(sentido=SentidoAbertura.SAIDA).exists())
+
+
 class AberturaCancelaTest(TestCase):
     def setUp(self):
         liberar_vagas()
@@ -86,6 +127,16 @@ class AberturaCancelaTest(TestCase):
     def test_manual_exige_operador(self):
         with self.assertRaises(AcessoNegado):
             AcessoService.liberar_manual(None, SentidoAbertura.ENTRADA, "Visitante autorizado")
+
+    def test_face_saida_altera_configuracao(self):
+        AcessoService.definir_face_saida(self.operador, True)
+        self.assertTrue(ConfiguracaoEstacionamento.obter().exigir_face_saida)
+        AcessoService.definir_face_saida(self.operador, False)
+        self.assertFalse(ConfiguracaoEstacionamento.obter().exigir_face_saida)
+
+    def test_face_saida_exige_operador(self):
+        with self.assertRaises(AcessoNegado):
+            AcessoService.definir_face_saida(None, True)
 
     def test_manual_registra_operador_e_motivo(self):
         abertura = AcessoService.liberar_manual(

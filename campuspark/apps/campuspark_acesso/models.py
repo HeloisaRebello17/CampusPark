@@ -83,10 +83,12 @@ class RegistroAcesso(models.Model):
 
 
 class ConfiguracaoEstacionamento(models.Model):
-    """Capacidade máxima de vagas do estacionamento, por tipo de veículo."""
+    """Capacidade máxima de vagas do estacionamento, por tipo de veículo, e módulos opcionais."""
 
     vagas_carro = models.PositiveIntegerField(default=0)
     vagas_moto = models.PositiveIntegerField(default=0)
+    # Módulo "saída pela face": quando ativo, a saída só é liberada com o rosto do dono do veículo.
+    exigir_face_saida = models.BooleanField(default=False)
     atualizado_em = models.DateTimeField(auto_now=True)
 
     class Meta:

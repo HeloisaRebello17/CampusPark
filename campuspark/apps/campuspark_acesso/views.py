@@ -142,8 +142,7 @@ class CancelaView(View):
             "operador": request.operador,
             "secao": "cancela",
             "aberturas": aberturas,
-            "dentro": dentro,
-            "tipos_veiculo": TipoVeiculo.choices,
+            "config": ConfiguracaoEstacionamento.obter(),
         }
         context.update(extra)
         return context
@@ -164,53 +163,14 @@ class CancelaView(View):
             return self._saida_manual(request)
         if acao == "manual":
             return self._manual(request)
+        if acao == "face_saida":
+            return self._face_saida(request)
         return render(request, self.template_name, self._contexto(request))
 
-    @staticmethod
-    def _consultar(placa):
-        """Passo 1 da entrada manual: a placa é de um veículo cadastrado ou de um visitante?"""
-        try:
-            placa, veiculo = AcessoService.consultar_placa(placa)
-        except AcessoNegado as e:
-            return {"erro": str(e), "placa": placa}
-        bloqueado = veiculo is not None and (not veiculo.autorizado or not veiculo.aluno.ativo)
-        return {"placa": placa, "veiculo": veiculo, "bloqueado": bloqueado}
-
-    def _entrada_manual(self, request):
-        placa = request.POST.get("placa", "")
-        try:
-            registro, aviso = AcessoService.entrada_manual(
-                request.operador, placa,
-                motivo=request.POST.get("motivo", ""),
-                tipo=request.POST.get("tipo", ""),
-                nome=request.POST.get("nome", ""),
-                documento=request.POST.get("documento", ""),
-            )
-        except AcessoNegado as e:
-            extra = {
-                "consulta": self._consultar(placa),
-                "erro_entrada_manual": str(e),
-                "valores_manual": request.POST,
-            }
-            return render(request, self.template_name, self._contexto(request, **extra), status=400)
-
-        quem = "Visitante" if registro.eh_visitante else "Aluno"
-        extra = {
-            "sucesso_entrada_manual": f"Entrada de {registro.placa_exibicao} registrada ({quem}: "
-                                      f"{registro.nome_exibicao}). A cancela foi aberta.",
-            "aviso_entrada_manual": aviso,
-        }
-        return render(request, self.template_name, self._contexto(request, **extra))
-
-    def _saida_manual(self, request):
-        try:
-            registro = AcessoService.saida_manual(
-                request.operador, request.POST.get("registro_id"), request.POST.get("motivo_saida", ""),
-            )
-        except (AcessoNegado, ValueError) as e:
-            extra = {"erro_saida_manual": str(e) if isinstance(e, AcessoNegado) else "Registro inválido."}
-            return render(request, self.template_name, self._contexto(request, **extra), status=400)
-        extra = {"sucesso_saida_manual": f"Saída de {registro.placa_exibicao} registrada. A cancela foi aberta."}
+    def _face_saida(self, request):
+        ativo = request.POST.get("ativo") == "1"
+        AcessoService.definir_face_saida(request.operador, ativo)
+        extra = {"sucesso_face_saida": "Saída pela face ativada." if ativo else "Saída pela face desativada."}
         return render(request, self.template_name, self._contexto(request, **extra))
 
     def _simular(self, request):
@@ -220,7 +180,7 @@ class CancelaView(View):
         extra = {"tag_digitada": tag, "matricula_digitada": matricula}
 
         aluno = None
-        if sentido == SentidoAbertura.ENTRADA and matricula:
+        if matricula:
             aluno = Aluno.objects.filter(matricula=matricula).first()
             if aluno is None:
                 extra["erro_auto"] = "Aluno com essa matrícula não foi encontrado."
@@ -229,7 +189,7 @@ class CancelaView(View):
 
         try:
             if sentido == SentidoAbertura.SAIDA:
-                registro = AcessoService.registrar_saida(tag)
+                registro = AcessoService.registrar_saida(tag, aluno_reconhecido=aluno)
             else:
                 sentido = SentidoAbertura.ENTRADA
                 registro = AcessoService.validar_entrada(tag, aluno_reconhecido=aluno)
@@ -266,21 +226,30 @@ class CancelaView(View):
         return render(request, self.template_name, self._contexto(request, **extra))
 
 
+class AlunoReconhecidoInvalido(Exception):
+    pass
+
+
+def _aluno_reconhecido(request):
+    """Aluno identificado pelo reconhecimento facial (campo opcional 'aluno_id'), ou None se não enviado."""
+    aluno_id = request.data.get("aluno_id")  # vem do reconhecimento facial (Thomas)
+    if aluno_id is None:
+        return None
+    aluno = Aluno.objects.filter(pk=aluno_id).first()
+    if aluno is None:
+        raise AlunoReconhecidoInvalido("Aluno reconhecido pela face não encontrado no sistema.")
+    return aluno
+
+
 class EntradaView(APIView):
     permission_classes = [OperadorAutenticado | DispositivoAutorizado]
 
     def post(self, request):
         tag = request.data.get("tag_rfid")
-        aluno_id = request.data.get("aluno_id")  # vem do reconhecimento facial (Thomas)
-
-        aluno_reconhecido = None
-        if aluno_id is not None:
-            aluno_reconhecido = Aluno.objects.filter(pk=aluno_id).first()
-            if aluno_reconhecido is None:
-                return Response(
-                    {"erro": "Aluno reconhecido pela face não encontrado no sistema."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        try:
+            aluno_reconhecido = _aluno_reconhecido(request)
+        except AlunoReconhecidoInvalido as e:
+            return Response({"erro": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             registro = AcessoService.validar_entrada(tag, aluno_reconhecido=aluno_reconhecido)
@@ -295,7 +264,12 @@ class SaidaView(APIView):
     def post(self, request):
         tag = request.data.get("tag_rfid")
         try:
-            registro = AcessoService.registrar_saida(tag)
+            aluno_reconhecido = _aluno_reconhecido(request)
+        except AlunoReconhecidoInvalido as e:
+            return Response({"erro": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            registro = AcessoService.registrar_saida(tag, aluno_reconhecido=aluno_reconhecido)
         except AcessoNegado as e:
             return Response({"erro": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(RegistroAcessoSerializer(registro).data, status=200)

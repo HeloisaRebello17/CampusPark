@@ -7,6 +7,28 @@
 <p class="painel-subtitulo">Liberação automática (simulação), entrada e saída manual</p>
 
 <section class="painel">
+    <h2>Saída pela face</h2>
+    <p>
+        Quando ativo, a saída só é liberada se o rosto reconhecido for do aluno dono do veículo (mesma regra da entrada).
+        Situação atual: <strong>{% if config.exigir_face_saida %}ATIVO{% else %}DESATIVADO (saída apenas pela TAG){% endif %}</strong>
+    </p>
+    <form method="post" class="form-vagas">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="face_saida">
+        {% if config.exigir_face_saida %}
+        <input type="hidden" name="ativo" value="0">
+        <button type="submit">Desativar saída pela face</button>
+        {% else %}
+        <input type="hidden" name="ativo" value="1">
+        <button type="submit">Ativar saída pela face</button>
+        {% endif %}
+    </form>
+    {% if sucesso_face_saida %}
+    <p style="margin-top:12px;padding:12px;border:1px solid #2e7d32;border-radius:6px;background:#e8f5e9;color:#1b5e20;">{{ sucesso_face_saida }}</p>
+    {% endif %}
+</section>
+
+<section class="painel">
     <h2>Liberação automática (simulação)</h2>
     <p>Simula a leitura da TAG RFID e do rosto do aluno. Se tudo estiver válido, a cancela abre e o acesso é registrado.</p>
     <form method="post" class="form-vagas">
@@ -24,7 +46,7 @@
             <input type="text" id="tag_rfid" name="tag_rfid" maxlength="30" value="{{ tag_digitada|default:'' }}" required>
         </div>
         <div>
-            <label for="matricula">Matrícula do aluno (rosto reconhecido, só na entrada)</label>
+            <label for="matricula">Matrícula do aluno (rosto reconhecido{% if config.exigir_face_saida %}, obrigatório na saída{% endif %})</label>
             <input type="text" id="matricula" name="matricula" maxlength="7" value="{{ matricula_digitada|default:'' }}">
         </div>
         <button type="submit">Simular leitura</button>
