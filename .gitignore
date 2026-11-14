@@ -30,3 +30,5 @@ Thumbs.db
 build/
 dist/
 *.spec
+# Logs
+campuspark/logs/

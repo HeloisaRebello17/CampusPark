@@ -120,3 +120,183 @@ class OperadorInativoTest(TestCase):
     def test_tela_de_login_volta_a_aparecer(self):
         resp = self.client.get(reverse("operador-login"))
         self.assertEqual(resp.status_code, 200)
+
+
+from unittest.mock import patch
+from django.core.cache import cache
+from core.exportacao import ExportacaoBloqueada, ip_do_request, registrar_exportacao
+
+@override_settings(
+    EXPORTACAO_INTERVALO_MINIMO=30, EXPORTACAO_JANELA=600,
+    EXPORTACAO_MAX_POR_JANELA=3, EXPORTACAO_BLOQUEIO=900, EXPORTACAO_IP_MAX_POR_JANELA=5,
+)
+class TravaExportacaoTest(TestCase):
+    """Trava por tempo e bloqueio por IP/usuário na exportação de CSV."""
+
+    def setUp(self):
+        cache.clear()
+        self.agora = 1_000_000.0
+        relogio = patch("core.exportacao.time.time", side_effect=lambda: self.agora)
+        relogio.start()
+        self.addCleanup(relogio.stop)
+
+    def exportar(self, perfil="operador", usuario_id=1, ip="10.0.0.1"):
+        registrar_exportacao(perfil, usuario_id, ip)
+
+    def test_primeira_exportacao_e_liberada(self):
+        self.exportar()
+
+    def test_intervalo_minimo_entre_exportacoes(self):
+        self.exportar()
+        self.agora += 10
+        with self.assertRaises(ExportacaoBloqueada) as erro:
+            self.exportar()
+        self.assertEqual(erro.exception.segundos, 20)
+        self.assertIn("Aguarde 20 segundos", str(erro.exception))
+        self.agora += 20
+        self.exportar()
+
+    def test_estourar_limite_bloqueia_o_usuario(self):
+        for _ in range(3):
+            self.exportar()
+            self.agora += 31
+        with self.assertRaises(ExportacaoBloqueada) as erro:
+            self.exportar()
+        self.assertEqual(erro.exception.segundos, 900)
+
+        # Continua bloqueado durante o período, mesmo depois que a janela "esvazia".
+        self.agora += 899
+        with self.assertRaises(ExportacaoBloqueada) as erro:
+            self.exportar()
+        self.assertIn("excesso de tentativas", str(erro.exception))
+
+        self.agora += 1
+        self.exportar()
+
+    def test_exportacoes_antigas_saem_da_janela(self):
+        for _ in range(3):
+            self.exportar()
+            self.agora += 31
+        self.agora += 600  # as 3 anteriores já saíram da janela de 10 min
+        self.exportar()
+
+    def test_bloqueio_e_por_usuario(self):
+        self.exportar(usuario_id=1)
+        self.exportar(usuario_id=2)                  # outro operador não é afetado
+        self.exportar(perfil="aluno", usuario_id=1)  # aluno com o mesmo id também não
+        with self.assertRaises(ExportacaoBloqueada):
+            self.exportar(usuario_id=1)
+
+    def test_trocar_de_ip_nao_burla_o_bloqueio_do_usuario(self):
+        self.exportar(ip="10.0.0.1")
+        with self.assertRaises(ExportacaoBloqueada):
+            self.exportar(ip="10.0.0.2")
+
+    def test_varias_contas_no_mesmo_ip_bloqueiam_o_ip(self):
+        for usuario_id in range(1, 6):  # 5 contas diferentes, limite do IP = 5
+            self.exportar(usuario_id=usuario_id)
+        with self.assertRaises(ExportacaoBloqueada) as erro:
+            self.exportar(usuario_id=6)
+        self.assertIn("deste endereço de rede", str(erro.exception))
+        self.assertEqual(erro.exception.segundos, 900)
+
+        # O bloqueio é do IP: a mesma conta (nova) de outro IP continua exportando.
+        self.exportar(usuario_id=6, ip="10.0.0.2")
+        with self.assertRaises(ExportacaoBloqueada):
+            self.exportar(usuario_id=7, ip="10.0.0.1")
+
+    def test_negada_pelo_ip_nao_conta_para_o_usuario(self):
+        for usuario_id in range(1, 6):
+            self.exportar(usuario_id=usuario_id)
+        for _ in range(3):  # negadas pelo IP: não podem gastar o limite do usuário 9
+            with self.assertRaises(ExportacaoBloqueada):
+                self.exportar(usuario_id=9)
+        self.exportar(usuario_id=9, ip="10.0.0.2")
+
+    def test_ip_nao_tem_intervalo_minimo(self):
+        self.exportar(usuario_id=1)
+        self.exportar(usuario_id=2)  # mesmo IP, logo em seguida: liberado
+
+
+class IpDoRequestTest(TestCase):
+    def requisicao(self, **meta):
+        from django.test import RequestFactory
+        return RequestFactory().get("/", REMOTE_ADDR="10.0.0.1", **meta)
+
+    @override_settings(EXPORTACAO_CONFIAR_PROXY=False)
+    def test_ignora_x_forwarded_for_sem_proxy_confiavel(self):
+        req = self.requisicao(HTTP_X_FORWARDED_FOR="1.2.3.4")
+        self.assertEqual(ip_do_request(req), "10.0.0.1")
+
+    @override_settings(EXPORTACAO_CONFIAR_PROXY=True)
+    def test_com_proxy_confiavel_usa_ip_adicionado_pelo_proxy(self):
+        # "1.2.3.4" foi forjado pelo cliente; "200.1.1.1" foi o que o proxy adicionou.
+        req = self.requisicao(HTTP_X_FORWARDED_FOR="1.2.3.4, 200.1.1.1")
+        self.assertEqual(ip_do_request(req), "200.1.1.1")
+
+
+class TravaExportacaoViewTest(TestCase):
+    """A trava aplicada na tela de histórico do operador."""
+
+    def setUp(self):
+        cache.clear()
+        logar(self.client, criar_operador("Porteiro", "44444444444"))
+        self.url = reverse("historico-exportar")
+
+    def test_csv_nao_fica_em_cache(self):
+        resp = self.client.get(self.url)
+        self.assertEqual(resp["Cache-Control"], "no-store")
+
+    def test_exportacao_seguida_volta_ao_historico_com_aviso_e_filtros(self):
+        self.client.get(self.url, {"tipo": "moto"})
+        resp = self.client.get(self.url, {"tipo": "moto"}, follow=True)
+        self.assertRedirects(resp, reverse("historico-acessos") + "?tipo=moto")
+        self.assertContains(resp, "antes de exportar novamente")
+
+    @override_settings(EXPORTACAO_IP_MAX_POR_JANELA=1)
+    def test_outro_operador_no_mesmo_ip_bloqueado(self):
+        self.client.get(self.url)
+        outro = Client(REMOTE_ADDR="127.0.0.1")
+        logar(outro, criar_operador("Porteiro", "55555555555"))
+        # O 1º operador já usou o limite do IP: a conta nova, no mesmo IP, é barrada.
+        resp = outro.get(self.url, follow=True)
+        self.assertContains(resp, "deste endereço de rede")
+
+    def test_exportacao_liberada_e_negada_saem_no_log_com_usuario_e_ip(self):
+        operador_id = self.client.session["operador_id"]
+        with self.assertLogs("campuspark.exportacao", level="INFO") as log:
+            self.client.get(self.url, {"tipo": "moto"})
+            self.client.get(self.url)
+        self.assertIn(
+            f"INFO:campuspark.exportacao:Exportação liberada: operador id={operador_id} ip=127.0.0.1 historico ?tipo=moto",
+            log.output,
+        )
+        self.assertTrue(any(
+            linha.startswith("WARNING:") and f"Exportação negada: operador id={operador_id} ip=127.0.0.1" in linha
+            for linha in log.output
+        ))
+
+    def test_aviso_traz_contagem_regressiva(self):
+        self.client.get(self.url)
+        resp = self.client.get(self.url, follow=True)
+        html = resp.content.decode()
+        # O <span> chega como HTML (não escapado) para o ui.js fazer a contagem.
+        self.assertRegex(html, r'Aguarde <span class="contagem" data-contagem="(\d+)">\1 segundos?</span> antes')
+        self.assertNotIn("&lt;span", html)
+
+
+class TempoRestanteTest(TestCase):
+    def test_formato_igual_ao_do_ui_js(self):
+        from core.exportacao import tempo_restante
+        self.assertEqual(tempo_restante(1), "1 segundo")
+        self.assertEqual(tempo_restante(25), "25 segundos")
+        self.assertEqual(tempo_restante(60), "1 min 00 s")
+        self.assertEqual(tempo_restante(845), "14 min 05 s")
+
+    def test_html_escapa_o_texto_e_mantem_so_o_span(self):
+        erro = ExportacaoBloqueada("<b>x</b> em {tempo}.", 25)
+        self.assertEqual(str(erro), "<b>x</b> em 25 segundos.")
+        self.assertEqual(
+            erro.como_html(),
+            '&lt;b&gt;x&lt;/b&gt; em <span class="contagem" data-contagem="25">25 segundos</span>.',
+        )

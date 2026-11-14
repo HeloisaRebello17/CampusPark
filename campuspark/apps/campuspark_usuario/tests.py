@@ -2,6 +2,7 @@ from datetime import datetime
 from unittest.mock import patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -320,6 +321,7 @@ class RelatorioMensalViewTest(TestCase):
     """CSV do aluno (usuario/pages.py::relatorio_mensal_view)."""
 
     def setUp(self):
+        cache.clear()  
         self.aluno = criar_aluno()
         outro = criar_aluno(matricula="7654321", cpf="22222222222", email="outro@catolicasc.org")
         meu = Veiculo.objects.create(aluno=self.aluno, placa="AAA1111", tipo="carro")
@@ -354,4 +356,11 @@ class RelatorioMensalViewTest(TestCase):
 
     def test_mes_invalido_usa_mes_atual(self):
         self.assertEqual(len(self.linhas(self.client.get(self.url, {"mes": "2026-13"}))), 2)
+        cache.clear() 
         self.assertEqual(len(self.linhas(self.client.get(self.url, {"mes": "abc"}))), 2)
+
+    def test_segunda_exportacao_seguida_volta_ao_painel_com_aviso(self):
+        self.client.get(self.url)
+        resp = self.client.get(self.url, follow=True)
+        self.assertRedirects(resp, reverse("aluno-dashboard"))
+        self.assertContains(resp, "antes de exportar novamente")

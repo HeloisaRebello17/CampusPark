@@ -50,6 +50,13 @@ ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts.split(",") if h.strip()]
 # enviada no header X-API-Key. Vazia = nenhum equipamento aceito.
 CAMPUSPARK_API_KEY = os.getenv("CAMPUSPARK_API_KEY", "")
 
+EXPORTACAO_INTERVALO_MINIMO = int(os.getenv("EXPORTACAO_INTERVALO_MINIMO", "30"))  # entre 2 exportacoes
+EXPORTACAO_JANELA = int(os.getenv("EXPORTACAO_JANELA", "600"))                       # janela de contagem
+EXPORTACAO_MAX_POR_JANELA = int(os.getenv("EXPORTACAO_MAX_POR_JANELA", "5"))         # maximo na janela
+EXPORTACAO_BLOQUEIO = int(os.getenv("EXPORTACAO_BLOQUEIO", "900"))                   # bloqueio ao estourar
+EXPORTACAO_IP_MAX_POR_JANELA = int(os.getenv("EXPORTACAO_IP_MAX_POR_JANELA", "15"))
+EXPORTACAO_CONFIAR_PROXY = os.getenv("EXPORTACAO_CONFIAR_PROXY", "False") == "True"
+
 # API fechada por padrao (RNF01, RNF14): so administrador, a menos que a view libere mais.
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["core.permissions.AdministradorAutenticado"],
@@ -168,3 +175,51 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# Logging: terminal + arquivo logs/campuspark.log (gira a cada 1 MB, guarda 5 arquivos).
+# Nivel ajustavel no .env, ex: LOG_LEVEL=DEBUG. Nos testes so aparece WARNING ou acima, no terminal.
+import sys
+
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+_TESTANDO = len(sys.argv) > 1 and sys.argv[1] == "test"
+LOG_LEVEL = "WARNING" if _TESTANDO else os.getenv("LOG_LEVEL", "INFO")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "padrao": {
+            "format": "[{asctime}] {levelname} {name}: {message}",
+            "datefmt": "%d/%m/%Y %H:%M:%S",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "padrao",
+        },
+        "arquivo": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOG_DIR / "campuspark.log",
+            "maxBytes": 1024 * 1024,
+            "backupCount": 5,
+            "encoding": "utf-8",
+            "formatter": "padrao",
+        },
+    },
+    "loggers": {
+        # Tudo que o sistema registrar com logging.getLogger("campuspark.<algo>").
+        "campuspark": {
+            "handlers": ["console", "arquivo"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+    },
+}
+
+# Nos testes nao usa o arquivo, para nao misturar com o log de uso real.
+if _TESTANDO:
+    del LOGGING["handlers"]["arquivo"]
+    LOGGING["loggers"]["campuspark"]["handlers"] = ["console"]

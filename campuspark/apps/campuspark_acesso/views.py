@@ -2,6 +2,7 @@ from apps.campuspark_usuario.models import Aluno
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.views import View
@@ -10,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from apps.campuspark_veiculo.models import TipoVeiculo
+from core.exportacao import ExportacaoBloqueada, ip_do_request, registrar_exportacao
 from core.permissions import (
     operador_login_required, administrador_required, OperadorAutenticado, DispositivoAutorizado,
 )
@@ -93,6 +95,18 @@ class ExportarHistoricoView(View):
     """Exporta em CSV o histórico com os mesmos filtros da tela."""
 
     def get(self, request):
+        try:
+            registrar_exportacao(
+                "operador", request.operador.pk, ip_do_request(request),
+                f"historico ?{request.GET.urlencode()}",
+            )
+        except ExportacaoBloqueada as e:
+            messages.warning(request, e.como_html())
+            destino = reverse("historico-acessos")
+            if request.GET:
+                destino += f"?{request.GET.urlencode()}"
+            return redirect(destino)
+
         registros, _, _ = _historico_filtrado(request)
         nome = f"historico_acessos_{timezone.localtime():%Y%m%d_%H%M}.csv"
         return resposta_csv(registros, nome, COLUNAS_OPERADOR)

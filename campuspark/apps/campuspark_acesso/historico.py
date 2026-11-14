@@ -127,4 +127,5 @@ def resposta_csv(registros, nome_arquivo: str, colunas) -> HttpResponse:
 
     response = HttpResponse(conteudo.getvalue(), content_type="text/csv; charset=utf-8-sig")
     response["Content-Disposition"] = f'attachment; filename="{nome_arquivo}"'
+    response["Cache-Control"] = "no-store"
     return response

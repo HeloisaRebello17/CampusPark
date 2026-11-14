@@ -72,6 +72,28 @@ document.addEventListener("DOMContentLoaded", () => {
     input.dispatchEvent(new Event("input"));
   });
 
+  const formatarTempo = (s) => {
+    if (s < 60) return `${s} segundo${s !== 1 ? "s" : ""}`;
+    return `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, "0")} s`;
+  };
+  document.querySelectorAll("[data-contagem]").forEach((span) => {
+    const fim = Date.now() + Number(span.dataset.contagem) * 1000;
+    const aviso = span.closest(".mensagem");
+    const atualizar = () => {
+      const restante = Math.max(0, Math.ceil((fim - Date.now()) / 1000));
+      if (restante > 0) {
+        span.textContent = formatarTempo(restante);
+        return;
+      }
+      clearInterval(timer);
+      if (aviso) {
+        aviso.textContent = "Pronto! Você já pode exportar novamente.";
+        aviso.classList.replace("mensagem--warning", "mensagem--success");
+      }
+    };
+    const timer = setInterval(atualizar, 1000);
+  });
+
   // Menu do sidebar em telas pequenas
   document.querySelectorAll("[data-sidebar-toggle]").forEach((btn) => {
     btn.addEventListener("click", () => {

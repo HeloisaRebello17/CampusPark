@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -110,6 +111,7 @@ class HistoricoAcessosViewTest(TestCase):
     """Histórico completo do operador com filtros e exportação (RF10, RF12)."""
 
     def setUp(self):
+        cache.clear()  
         self.ana = Aluno.objects.create(
             matricula="1111111", cpf="11111111111", nome_completo="Ana Souza",
             email_institucional="ana@catolicasc.org", senha_hash="x",
@@ -293,6 +295,7 @@ class CancelaManualViewTest(TestCase):
     """Tela da cancela: consulta de placa, entrada e saída manual."""
 
     def setUp(self):
+        cache.clear()  
         liberar_vagas()
         aluno = Aluno.objects.create(
             matricula="1234567", cpf="11111111111", nome_completo="Aluna Tela",
