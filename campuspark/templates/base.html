@@ -22,7 +22,8 @@
   {% endif %}
 
   {% block content %}{% endblock %}
-  <script src="{% static 'js/ui.js' %}"></script>
+  {# ?v=: mude ao alterar o ui.js, para o navegador não usar a versão antiga em cache #}
+  <script src="{% static 'js/ui.js' %}?v=2"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

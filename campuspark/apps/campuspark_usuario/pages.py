@@ -14,6 +14,7 @@ from apps.campuspark_biometria.services import BiometriaService, RostoNaoDetecta
 from apps.campuspark_veiculo.models import TipoVeiculo, Veiculo
 from apps.campuspark_veiculo.services import OperacaoVeiculoNegada, VeiculoService
 from apps.campuspark_veiculo.validators import PLACA_REGEX
+from core.exportacao import ExportacaoBloqueada, ip_do_request, registrar_exportacao
 from core.utils import somente_numeros
 from .models import Aluno, Operador
 from .services import UsuarioService
@@ -241,6 +242,12 @@ def _mes_do_relatorio(texto: str):
 def relatorio_mensal_view(request):
     """Exporta em CSV os acessos (entrada/saida) do mes escolhido (padrao: mes atual) do aluno logado."""
     ano, mes = _mes_do_relatorio(request.GET.get("mes", ""))
+    try:
+        registrar_exportacao("aluno", request.aluno.pk, ip_do_request(request), f"relatorio {ano}-{mes:02d}")
+    except ExportacaoBloqueada as e:
+        messages.warning(request, e.como_html())
+        return redirect("aluno-dashboard")
+
     registros = (
         RegistroAcesso.objects
         .filter(veiculo__aluno=request.aluno, data_entrada__year=ano, data_entrada__month=mes)
