@@ -1,6 +1,6 @@
 # Uso:
 #   python manage.py simular_acesso <TAG_RFID> --matricula <MATRICULA>          (entrada)
-#   python manage.py simular_acesso <TAG_RFID> --saida                          (saida)
+#   python manage.py simular_acesso <TAG_RFID> --saida [--matricula <MATRICULA>] (saida)
 #
 # Simula o momento em que o rosto e lido e a cancela abre: mostra no terminal o
 # reconhecimento do aluno, a abertura da cancela e o resumo do acesso autorizado
@@ -20,7 +20,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("tag_rfid", help="TAG RFID do veiculo.")
-        parser.add_argument("--matricula", help="Matricula do aluno 'reconhecido pelo rosto' (so na entrada).")
+        parser.add_argument("--matricula", help="Matricula do aluno 'reconhecido pelo rosto'.")
         parser.add_argument("--saida", action="store_true", help="Simula a saida em vez da entrada.")
 
     def handle(self, *args, **options):
@@ -28,7 +28,7 @@ class Command(BaseCommand):
         saida = options["saida"]
         aluno = None
 
-        if options["matricula"] and not saida:
+        if options["matricula"]:
             aluno = Aluno.objects.filter(matricula=options["matricula"]).first()
             if aluno is None:
                 raise CommandError(f"Aluno com matricula {options['matricula']} nao encontrado.")
@@ -36,7 +36,7 @@ class Command(BaseCommand):
 
         try:
             if saida:
-                registro = AcessoService.registrar_saida(tag)
+                registro = AcessoService.registrar_saida(tag, aluno_reconhecido=aluno)
                 sentido = SentidoAbertura.SAIDA
             else:
                 registro = AcessoService.validar_entrada(tag, aluno_reconhecido=aluno)
